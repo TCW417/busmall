@@ -25,7 +25,7 @@ new Product('Yummy Meatball Bubblegum','bubblegum.jpg');
 new Product('Over-inflated Chair','chair.jpg');
 new Product('Toy Gargoyl','cthulhu.jpg');
 new Product('Duck\'s Beak Muzzle','dog-duck.jpg');
-new Product('Canned Dragon Meat','dragon.jpg');
+new Product('Canned Dragon Meat','dragon.png');
 new Product('Bic Pen Cap Cutlery','pen-left.png');
 new Product('Floor Sweeping Pet Footies','pet-sweep.jpg');
 new Product('Pizza Cutting Scissors','scissors.jpg');

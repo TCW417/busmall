@@ -35,12 +35,21 @@ figure {
   display: block;
   float: left;
   width: 300px;
-  height: 350px;
+  height: 400px;
   border: 10px solid #444;
   margin: 10px 5px;
+  position: relative;
 }
+
 figcaption {
   text-align: center;
   font-family: sans-serif;
   font-size: 120%;
+  position: absolute;
+  top: 370px;
+  width: 100%;
+}
+
+figure img {
+  width: 100%;
 }
