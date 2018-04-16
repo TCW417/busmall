@@ -3,7 +3,7 @@
 // Globals
 var productID = 0; // Give each product an internal ID
 var prodArray = []; // Array of product objects
-var voteCount = 25; // When === 0 show results
+var voteCount = 1; // When === 0 show results
 var usedLastTurn = [999,999,999]; // ID's of last turn's pics
 
 // Constructor for Product object
@@ -75,6 +75,9 @@ function displayThreeImages() {
     figEl.setAttribute('pid', pID);
     prodArray[displayList[img]].displayCount++;
   }
+  // update votes remaining tally
+  var vcEl = document.getElementById('votes-left');
+  vcEl.textContent = voteCount;
 }
 
 function figureClicked(e) {
@@ -83,8 +86,9 @@ function figureClicked(e) {
   console.log(prodID);
   // increment it's vote count
   prodArray[prodID].clickCount++;
-  // decrement global vote count
+  // decrement global vote count and update display
   voteCount--;
+  
   if (voteCount > 0) {
   // display three more images
     displayThreeImages();
@@ -115,6 +119,23 @@ function startListening() {
 
 function displayResults() {
   console.log('Display Results Here');
+  // delete <main> element from page
+  debugger;
+  var mainEl = document.body.getElementsByTagName('main')[0]; 
+  document.body.removeChild(mainEl);
+
+  var bodyEl = document.getElementsByTagName('body')[0];
+  var footerEl = document.getElementsByTagName('footer')[0];
+
+  // create a new <main>
+  mainEl = document.createElement('main');
+  bodyEl.insertBefore(mainEl, footerEl);
+
+  // Add new h2 element
+  var h2El = document.createElement('h2');
+  h2El.textContent = 'Voting Results';
+  mainEl.appendChild(h2El);
+
 }
 
 displayThreeImages();

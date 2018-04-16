@@ -14,7 +14,10 @@ h1 {
 }
 h2 {
   font-size: 250%;
+  text-align: center;
+  margin: 10px;
 }
+
 h3 {
   font-size: 200%;
   text-align: center;
@@ -22,6 +25,8 @@ h3 {
 }
 h4 {
   font-size: 150%;
+  text-align: center;
+  margin-top: 10px;
 }
 
 div#product-pics {
