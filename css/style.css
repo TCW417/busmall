@@ -36,9 +36,16 @@ figure {
   float: left;
   width: 300px;
   height: 400px;
-  border: 10px solid #444;
+  border: 10px solid #777;
   margin: 10px 5px;
   position: relative;
+}
+
+figure:hover {
+  border: 10px solid #222;
+}
+figure:active {
+  border: 10px solid red;
 }
 
 figcaption {

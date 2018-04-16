@@ -54,8 +54,7 @@ function getThreeRandomImageIndices() {
   return usedThisTurn;
 }
 
-// voteCount = 4;
-// while (voteCount > 0) {
+
 function displayThreeImages() {
   // Select three images at random that weren't used last turn
   var displayList = getThreeRandomImageIndices();
@@ -67,14 +66,57 @@ function displayThreeImages() {
     imgEl.src = prodArray[displayList[img]].src;
     var capEl = document.getElementById('c'+img);
     capEl.textContent = prodArray[displayList[img]].name;
+    // add pid attributes to image, caption and figure
+    // Needed because user could click on any of these to vote
+    var pID = prodArray[displayList[img]].ID;
+    imgEl.setAttribute('pid', pID);
+    capEl.setAttribute('pid', pID);
+    var figEl = document.getElementById('f'+img);
+    figEl.setAttribute('pid', pID);
+    prodArray[displayList[img]].displayCount++;
   }
-  // voteCount--;
+}
+
+function figureClicked(e) {
+  // figure out which product is displayed
+  var prodID = e.target.getAttribute('pid');
+  console.log(prodID);
+  // increment it's vote count
+  prodArray[prodID].clickCount++;
+  // decrement global vote count
+  voteCount--;
+  if (voteCount > 0) {
+  // display three more images
+    displayThreeImages();
+  } else {
+    // shut down listeners and display results
+    stopListening();
+    displayResults();
+  }
+}
+
+function stopListening() {
+  var figure0 = document.getElementById('f0');
+  figure0.removeEventListener('click',figureClicked);
+  var figure1 = document.getElementById('f1');
+  figure1.removeEventListener('click', figureClicked);
+  var figure2 = document.getElementById('f2');
+  figure2.removeEventListener('click', figureClicked);
+}
+
+function startListening() {
+  var figure0 = document.getElementById('f0');
+  figure0.addEventListener('click',figureClicked);
+  var figure1 = document.getElementById('f1');
+  figure1.addEventListener('click', figureClicked);
+  var figure2 = document.getElementById('f2');
+  figure2.addEventListener('click', figureClicked);
+}
+
+function displayResults() {
+  console.log('Display Results Here');
 }
 
 displayThreeImages();
 
-var figure0 = document.getElementById('figure0');
-figure0.addEventListener('click',function(e){
-  console.log('clicked');
-  displayThreeImages();
-});
+startListening();
