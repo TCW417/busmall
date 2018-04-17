@@ -9,11 +9,13 @@ Product.tableauSize; // number of product pics to display
 Product.sessionNum = 0; // session number of this user's voting
 Product.userName = ''; // this user's name
 // Globals for chart display
-Product.allProdNames = [];
-Product.allVotes = [];
-Product.allViews = [];
-Product.allAffinities = []; // votes/view percentage
-Product.allColors = [];
+Product.chartData = {
+  allProdNames: [],
+  allVotes: [],
+  allViews: [],
+  allAffinities: [], // votes/view percentage
+  allColors: []
+};
 
 // Constructor for Product object
 function Product(productName, imgFileName) {
@@ -155,12 +157,12 @@ Product.displayResults = function() {
   var votesChart = new Chart(ctx0, {
     type: 'horizontalBar',
     data: {
-      labels: Product.allProdNames,
+      labels: Product.chartData.allProdNames,
       datasets: [{
         label: 'Number of Votes',
-        data: Product.allVotes,
-        backgroundColor: Product.allColors,
-        borderColor: Product.allColors,
+        data: Product.chartData.allVotes,
+        backgroundColor: Product.chartData.allColors,
+        borderColor: Product.chartData.allColors,
         borderWidth: 1
       }]
     },
@@ -193,12 +195,12 @@ Product.displayResults = function() {
   var affinitiesChart = new Chart(ctx1, {
     type: 'horizontalBar',
     data: {
-      labels: Product.allProdNames,
+      labels: Product.chartData.allProdNames,
       datasets: [{
         label: 'Affinity: votes / views * 100',
-        data: Product.allAffinities,
-        backgroundColor: Product.allColors,
-        borderColor: Product.allColors,
+        data: Product.chartData.allAffinities,
+        backgroundColor: Product.chartData.allColors,
+        borderColor: Product.chartData.allColors,
         borderWidth: 1
       }]
     },
@@ -315,20 +317,24 @@ Product.voteProducts = function() {
   Product.startListening();
 };
 
+
 Product.collectChartData = function() {
   for (var p = 0; p < Product.prodArray.length; p++) {
-    Product.allProdNames.push(Product.prodArray[p].name);
-    Product.allVotes.push(Product.prodArray[p].clickCount);
-    Product.allViews.push(Product.prodArray[p].displayCount);
-    Product.allAffinities.push(Product.prodArray[p].votesPerView());
+    Product.chartData.allProdNames.push(Product.prodArray[p].name);
+    Product.chartData.allVotes.push(Product.prodArray[p].clickCount);
+    Product.chartData.allViews.push(Product.prodArray[p].displayCount);
+    Product.chartData.allAffinities.push(Product.prodArray[p].votesPerView());
   }
-  Product.allColors = Product.genRandomColors(); // get chart colors
+  Product.chartData.allColors = Product.genRandomColors(); // get chart colors
 };
 
 Product.genRandomColors = function() {
-  var ca = [], c, i = 0;
+  var ca = [], c, r, g, b, i = 0;
   while (i < Product.prodArray.length) {
-    c = '#'+Math.floor(Math.random() * 0xFFFFFF).toString(16);
+    r = Math.floor(Math.random() * 0xF * 0xF).toString(16);
+    g = Math.floor(Math.random() * 0xF * 0xE).toString(16);
+    b = Math.floor(Math.random() * 0xF * 0xF).toString(16);
+    c = '#'+ r + g + b;
     if (!ca.includes(c)) {
       ca.push(c);
     }
