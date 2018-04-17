@@ -8,6 +8,15 @@ Product.usedLastTurn = [999,999,999]; // ID's of last turn's pics
 Product.tableauSize; // number of product pics to display
 Product.sessionNum = 0; // session number of this user's voting
 Product.userName = ''; // this user's name
+// Globals for chart display
+Product.chartData = {
+  allProdNames: [],
+  allVotes: [],
+  allViews: [],
+  allAffinities: [], // votes/view percentage
+  allColors: []
+};
+
 // Constructor for Product object
 function Product(productName, imgFileName) {
   this.name = productName;
@@ -21,9 +30,9 @@ function Product(productName, imgFileName) {
 Product.prototype.votesPerView = function() {
   var rv = 0;
   if (this.displayCount !== 0) {
-    rv = this.clickCount / this.displayCount;
+    rv = (this.clickCount / this.displayCount) * 100;
   }
-  return Number.parseFloat(rv).toPrecision(1);
+  return Number.parseFloat(rv); //.toPrecision(1);
 };
 
 new Product('C3P0 Rolling Suitcase','bag.jpg');
@@ -136,33 +145,102 @@ Product.displayResults = function() {
   h2El.textContent = 'Voting Results';
   mainEl.appendChild(h2El);
 
-  // Create a table with header and append to main
-  var tableEl = document.createElement('table');
-  var trEl = document.createElement('tr');
-  Product.createTextElement('th','Product',trEl);
-  Product.createTextElement('th','Votes',trEl);
-  Product.createTextElement('th','Views',trEl);
-  Product.createTextElement('th','Votes/View',trEl);
-  tableEl.appendChild(trEl);
-  mainEl.appendChild(tableEl);
+  // Add new canvas elements
+  Product.createCanvas('chart0', mainEl);
+  Product.createCanvas('chart1', mainEl);
 
-  // Loop through Products displaying results
+  // Gather voting data into arrays for graphing
+  Product.collectChartData();
 
-  for (var p = 0; p < Product.prodArray.length; p++) {
-    console.log(Product.prodArray[p].name, Product.prodArray[p].clickCount,Product.prodArray[p].displayCount,Product.prodArray[p].votesPerView());
-    trEl = document.createElement('tr');
-    Product.createTextElement('td',Product.prodArray[p].name,trEl);
-    Product.createTextElement('td',Product.prodArray[p].clickCount,trEl);
-    Product.createTextElement('td',Product.prodArray[p].displayCount,trEl);
-    Product.createTextElement('td',Product.prodArray[p].votesPerView(),trEl);
-    tableEl.appendChild(trEl);
-  }
+  // Create bar chart
+  var ctx0 = document.getElementById('chart0').getContext('2d');
+  var votesChart = new Chart(ctx0, {
+    type: 'horizontalBar',
+    data: {
+      labels: Product.chartData.allProdNames,
+      datasets: [{
+        label: 'Number of Votes',
+        data: Product.chartData.allVotes,
+        backgroundColor: Product.chartData.allColors,
+        borderColor: Product.chartData.allColors,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: {
+        yAxes: [{
+          ticks: {
+            beginAtZero:true
+          }
+        }]
+      },
+      title: {
+        display: true,
+        text: 'Product Voting Results',
+        fontSize: 20,
+        fontStyle: 'bold'
+      },
+      layout: {
+        padding: {
+          left: 0,
+          right: 0,
+          top: 25,
+          bottom: 25
+        }
+      }
+    }
+  });
+
+  var ctx1 = document.getElementById('chart1').getContext('2d');
+  var affinitiesChart = new Chart(ctx1, {
+    type: 'horizontalBar',
+    data: {
+      labels: Product.chartData.allProdNames,
+      datasets: [{
+        label: 'Affinity: votes / views * 100',
+        data: Product.chartData.allAffinities,
+        backgroundColor: Product.chartData.allColors,
+        borderColor: Product.chartData.allColors,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: {
+        yAxes: [{
+          ticks: {
+            beginAtZero:true
+          }
+        }]
+      },
+      title: {
+        display: true,
+        text: 'Product Affinity Results',
+        fontSize: 20,
+        fontStyle: 'bold'
+      },
+      layout: {
+        padding: {
+          left: 0,
+          right: 0,
+          top: 25,
+          bottom: 25
+        }
+      }
+    }
+  });
 };
 
 Product.createTextElement = function(tag, text, parent) {
   var el = document.createElement(tag);
   el.textContent = text;
   parent.appendChild(el);
+};
+
+Product.createCanvas = function(canvasId, parentEl) {
+  var canvasEl = document.createElement('canvas');
+  canvasEl.setAttribute('width','1000');
+  canvasEl.setAttribute('id',canvasId);
+  parentEl.appendChild(canvasEl);
 };
 
 Product.createFigureElement = function(figNum) {
@@ -237,6 +315,32 @@ Product.voteProducts = function() {
   Product.displayProductImages(Product.tableauSize);
 
   Product.startListening();
+};
+
+
+Product.collectChartData = function() {
+  for (var p = 0; p < Product.prodArray.length; p++) {
+    Product.chartData.allProdNames.push(Product.prodArray[p].name);
+    Product.chartData.allVotes.push(Product.prodArray[p].clickCount);
+    Product.chartData.allViews.push(Product.prodArray[p].displayCount);
+    Product.chartData.allAffinities.push(Product.prodArray[p].votesPerView());
+  }
+  Product.chartData.allColors = Product.genRandomColors(); // get chart colors
+};
+
+Product.genRandomColors = function() {
+  var ca = [], c, r, g, b, i = 0;
+  while (i < Product.prodArray.length) {
+    r = Math.floor(Math.random() * 0xF * 0xF).toString(16);
+    g = Math.floor(Math.random() * 0xF * 0xE).toString(16);
+    b = Math.floor(Math.random() * 0xF * 0xF).toString(16);
+    c = '#'+ r + g + b;
+    if (!ca.includes(c)) {
+      ca.push(c);
+    }
+    i++;
+  }
+  return ca;
 };
 
 Product.formEl = document.getElementById('submit');
