@@ -3,7 +3,7 @@
 // Globals
 var productID = 0; // Give each product an internal ID
 var prodArray = []; // Array of product objects
-var voteCount = 1; // When === 0 show results
+var voteCount = 25; // When === 0 show results
 var usedLastTurn = [999,999,999]; // ID's of last turn's pics
 
 // Constructor for Product object
@@ -15,6 +15,14 @@ function Product(productName, imgFileName) {
   this.ID = productID++;
   prodArray.push(this);
 }
+
+Product.prototype.votesPerView = function() {
+  var rv = 0;
+  if (this.displayCount !== 0) {
+    rv = this.clickCount / this.displayCount;
+  }
+  return Number.parseFloat(rv).toPrecision(1);
+};
 
 new Product('C3P0 Rolling Suitcase','bag.jpg');
 new Product('Banana Slicer','banana.jpg');
@@ -88,7 +96,7 @@ function figureClicked(e) {
   prodArray[prodID].clickCount++;
   // decrement global vote count and update display
   voteCount--;
-  
+
   if (voteCount > 0) {
   // display three more images
     displayThreeImages();
@@ -120,8 +128,7 @@ function startListening() {
 function displayResults() {
   console.log('Display Results Here');
   // delete <main> element from page
-  debugger;
-  var mainEl = document.body.getElementsByTagName('main')[0]; 
+  var mainEl = document.body.getElementsByTagName('main')[0];
   document.body.removeChild(mainEl);
 
   var bodyEl = document.getElementsByTagName('body')[0];
@@ -136,8 +143,34 @@ function displayResults() {
   h2El.textContent = 'Voting Results';
   mainEl.appendChild(h2El);
 
+  // Create a table with header and append to main
+  var tableEl = document.createElement('table');
+  var trEl = document.createElement('tr');
+  createTextElement('th','Product',trEl);
+  createTextElement('th','Votes',trEl);
+  createTextElement('th','Views',trEl);
+  createTextElement('th','Votes/View',trEl);
+  tableEl.appendChild(trEl);
+  mainEl.appendChild(tableEl);
+
+  // Loop through Products displaying results
+
+  for (var p = 0; p < prodArray.length; p++) {
+    console.log(prodArray[p].name, prodArray[p].clickCount,prodArray[p].displayCount,prodArray[p].votesPerView());
+    trEl = document.createElement('tr');
+    createTextElement('td',prodArray[p].name,trEl);
+    createTextElement('td',prodArray[p].clickCount,trEl);
+    createTextElement('td',prodArray[p].displayCount,trEl);
+    createTextElement('td',prodArray[p].votesPerView(),trEl);
+    tableEl.appendChild(trEl);
+  }
 }
 
+function createTextElement(tag, text, parent) {
+  var el = document.createElement(tag);
+  el.textContent = text;
+  parent.appendChild(el);
+}
 displayThreeImages();
 
 startListening();
