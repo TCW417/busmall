@@ -47,7 +47,7 @@ new Product('Wiggling USB Dragon Tail','usb.gif');
 new Product('Recycling Watering Can','water-can.jpg');
 new Product('Boquet-Retaining Wine Glass','wine-glass.jpg');
 
-function getRandomImageIndices(tableauSize) {
+Product.getRandomImageIndices = function(tableauSize) {
   // return three random product indexes that aren't in
   // usedLastTurn array
   var i = 0;
@@ -62,11 +62,11 @@ function getRandomImageIndices(tableauSize) {
   console.log('last turn',Product.usedLastTurn,'this turn',usedThisTurn);
   Product.usedLastTurn = usedThisTurn;
   return usedThisTurn;
-}
+};
 
 // Select product images at random that weren't used last turn
-function displayProductImages(tableauSize) {
-  var displayList = getRandomImageIndices(tableauSize);
+Product.displayProductImages = function(tableauSize) {
+  var displayList = Product.getRandomImageIndices(tableauSize);
   // Display the images on the page
   for (var img = 0; img < displayList.length; img++) {
     // modify DOM for image to display file and name
@@ -87,9 +87,9 @@ function displayProductImages(tableauSize) {
   // update votes remaining tally
   var vcEl = document.getElementById('votes-left');
   vcEl.textContent = Product.voteCount;
-}
+};
 
-function figureClicked(e) {
+Product.figureClicked = function(e) {
   // figure out which product is displayed
   var prodID = e.target.getAttribute('pid');
   console.log(prodID);
@@ -100,29 +100,29 @@ function figureClicked(e) {
 
   if (Product.voteCount > 0) {
   // display more images
-    displayProductImages(Product.tableauSize);
+    Product.displayProductImages(Product.tableauSize);
   } else {
     // shut down listeners and display results
-    stopListening(Product.tableauSize);
-    displayResults();
+    Product.stopListening(Product.tableauSize);
+    Product.displayResults();
   }
-}
+};
 
-function startListening(tableauSize) {
+Product.startListening = function(tableauSize) {
   for (var p = 0; p < tableauSize; p++) {
     var figure = document.getElementById('f'+p);
-    figure.addEventListener('click',figureClicked);
+    figure.addEventListener('click',Product.figureClicked);
   }
-}
+};
 
-function stopListening(tableauSize) {
+Product.stopListening = function(tableauSize) {
   for (var p = 0; p < tableauSize; p++) {
     var figure = document.getElementById('f'+p);
-    figure.removeEventListener('click',figureClicked);
+    figure.removeEventListener('click',Product.figureClicked);
   }
-}
+};
 
-function displayResults() {
+Product.displayResults = function() {
   console.log('Display Results Here');
   // delete <main> element from page
   var mainEl = document.body.getElementsByTagName('main')[0];
@@ -143,10 +143,10 @@ function displayResults() {
   // Create a table with header and append to main
   var tableEl = document.createElement('table');
   var trEl = document.createElement('tr');
-  createTextElement('th','Product',trEl);
-  createTextElement('th','Votes',trEl);
-  createTextElement('th','Views',trEl);
-  createTextElement('th','Votes/View',trEl);
+  Product.createTextElement('th','Product',trEl);
+  Product.createTextElement('th','Votes',trEl);
+  Product.createTextElement('th','Views',trEl);
+  Product.createTextElement('th','Votes/View',trEl);
   tableEl.appendChild(trEl);
   mainEl.appendChild(tableEl);
 
@@ -155,21 +155,21 @@ function displayResults() {
   for (var p = 0; p < Product.prodArray.length; p++) {
     console.log(Product.prodArray[p].name, Product.prodArray[p].clickCount,Product.prodArray[p].displayCount,Product.prodArray[p].votesPerView());
     trEl = document.createElement('tr');
-    createTextElement('td',Product.prodArray[p].name,trEl);
-    createTextElement('td',Product.prodArray[p].clickCount,trEl);
-    createTextElement('td',Product.prodArray[p].displayCount,trEl);
-    createTextElement('td',Product.prodArray[p].votesPerView(),trEl);
+    Product.createTextElement('td',Product.prodArray[p].name,trEl);
+    Product.createTextElement('td',Product.prodArray[p].clickCount,trEl);
+    Product.createTextElement('td',Product.prodArray[p].displayCount,trEl);
+    Product.createTextElement('td',Product.prodArray[p].votesPerView(),trEl);
     tableEl.appendChild(trEl);
   }
-}
+};
 
-function createTextElement(tag, text, parent) {
+Product.createTextElement = function(tag, text, parent) {
   var el = document.createElement(tag);
   el.textContent = text;
   parent.appendChild(el);
-}
+};
 
-function createFigureElement(figNum) {
+Product.createFigureElement = function(figNum) {
   // This is what we want to append to the #product-pics div
   // <figure id="f0">
   //   <img src="" id="i0"/>
@@ -194,9 +194,9 @@ function createFigureElement(figNum) {
 
   // append to division
   ppDiv.appendChild(newFig);
-}
+};
 
-function getUserInput() {
+Product.getUserInput = function() {
 
   Product.userName = document.getElementById('userName').value;
   Product.sessionNum = parseInt(document.getElementById('session').value);
@@ -204,23 +204,23 @@ function getUserInput() {
 
   // stop listening
   var formEl = document.getElementById('submit');
-  formEl.removeEventListener('click', getUserInput);
+  formEl.removeEventListener('click', Product.getUserInput);
 
   // remove input form from page
-  clearUserInputForm();
+  Product.clearUserInputForm();
 
   // begin voting products
-  voteProducts();
-}
+  Product.voteProducts();
+};
 
-function clearUserInputForm() {
+Product.clearUserInputForm = function() {
   // delete <main> element from page
   var formEl = document.getElementById('input-form');
   formEl.parentNode.removeChild(formEl);
   return false;
-}
+};
 
-function insertTableauHeading() {
+Product.insertTableauHeading = function() {
   var mainEl = document.getElementById('product-headings');
   var heading = document.createElement('h3');
   heading.textContent = 'Click on the product you\'d be most likely to purchase';
@@ -228,20 +228,20 @@ function insertTableauHeading() {
   var subHeading = document.createElement('h4');
   subHeading.innerHTML = '<span id="votes-left">25</span> Votes Remaining';
   mainEl.appendChild(subHeading);
-}
+};
 
-function voteProducts() {
+Product.voteProducts = function() {
 
-  insertTableauHeading();
+  Product.insertTableauHeading();
 
   for (var f = 0; f < Product.tableauSize; f++) {
-    createFigureElement(f);
+    Product.createFigureElement(f);
   }
 
-  displayProductImages(Product.tableauSize);
+  Product.displayProductImages(Product.tableauSize);
 
-  startListening(Product.tableauSize);
-}
+  Product.startListening(Product.tableauSize);
+};
 
-var formEl = document.getElementById('submit');
-formEl.addEventListener('click', getUserInput);
+Product.formEl = document.getElementById('submit');
+Product.formEl.addEventListener('click', Product.getUserInput);
