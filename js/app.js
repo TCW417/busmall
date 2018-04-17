@@ -103,23 +103,19 @@ Product.figureClicked = function(e) {
     Product.displayProductImages(Product.tableauSize);
   } else {
     // shut down listeners and display results
-    Product.stopListening(Product.tableauSize);
+    Product.stopListening();
     Product.displayResults();
   }
 };
 
-Product.startListening = function(tableauSize) {
-  for (var p = 0; p < tableauSize; p++) {
-    var figure = document.getElementById('f'+p);
-    figure.addEventListener('click',Product.figureClicked);
-  }
+Product.startListening = function() {
+  var figures = document.getElementById('product-pics');
+  figures.addEventListener('click', Product.figureClicked);
 };
 
-Product.stopListening = function(tableauSize) {
-  for (var p = 0; p < tableauSize; p++) {
-    var figure = document.getElementById('f'+p);
-    figure.removeEventListener('click',Product.figureClicked);
-  }
+Product.stopListening = function() {
+  var figures = document.getElementById('product-pics');
+  figures.removeEventListener('click', Product.figureClicked);
 };
 
 Product.displayResults = function() {
@@ -240,7 +236,7 @@ Product.voteProducts = function() {
 
   Product.displayProductImages(Product.tableauSize);
 
-  Product.startListening(Product.tableauSize);
+  Product.startListening();
 };
 
 Product.formEl = document.getElementById('submit');
