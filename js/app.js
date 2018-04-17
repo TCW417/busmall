@@ -3,10 +3,10 @@
 // Globals
 var productID = 0; // Give each product an internal ID
 var prodArray = []; // Array of product objects
-var voteCount = 5; // When === 0 show results
+var voteCount = 25; // When === 0 show results
 var usedLastTurn = [999,999,999]; // ID's of last turn's pics
-var tableauSize = 7; // number of product pics to display
-
+var tableauSize; // number of product pics to display
+var sessionNum, userName;
 // Constructor for Product object
 function Product(productName, imgFileName) {
   this.name = productName;
@@ -195,10 +195,52 @@ function createFigureElement(figNum) {
   ppDiv.appendChild(newFig);
 }
 
-for (var f = 0; f < tableauSize; f++) {
-  createFigureElement(f);
+function getUserInput() {
+
+  userName = document.getElementById('userName').value;
+  sessionNum = parseInt(document.getElementById('session').value);
+  tableauSize = parseInt(document.querySelector('input[name="tableauSize"]:checked').value);
+
+  // stop listening
+  var formEl = document.getElementById('submit');
+  formEl.removeEventListener('click', getUserInput);
+
+  // remove input form from page
+  clearUserInputForm();
+
+  // begin voting products
+  voteProducts();
 }
 
-displayProductImages(tableauSize);
+function clearUserInputForm() {
+  // delete <main> element from page
+  var formEl = document.getElementById('input-form');
+  formEl.parentNode.removeChild(formEl);
+  return false;
+}
 
-startListening(tableauSize);
+function insertTableauHeading() {
+  var mainEl = document.getElementById('product-headings');
+  var heading = document.createElement('h3');
+  heading.textContent = 'Click on the product you\'d be most likely to purchase';
+  mainEl.appendChild(heading);
+  var subHeading = document.createElement('h4');
+  subHeading.innerHTML = '<span id="votes-left">25</span> Votes Remaining';
+  mainEl.appendChild(subHeading);
+}
+
+function voteProducts() {
+
+  insertTableauHeading();
+
+  for (var f = 0; f < tableauSize; f++) {
+    createFigureElement(f);
+  }
+
+  displayProductImages(tableauSize);
+
+  startListening(tableauSize);
+}
+
+var formEl = document.getElementById('submit');
+formEl.addEventListener('click', getUserInput);

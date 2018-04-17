@@ -25,6 +25,25 @@ h4 {
   margin-top: 10px;
 }
 
+div#input-form {
+  display: block;
+  text-align: center;
+  font-family: sans-serif;
+  font-size: 100%;
+  margin-top: 50px;
+  /* width: 100%; */
+  margin-right: auto;
+  margin-left: auto;
+}
+div#input-form p {
+  margin: 10px;
+  padding: 0;
+  font-size: 20px;
+}
+
+div#input-form input, select {
+  font-size: 20px;
+}
 div#product-pics {
   display: block;
   width: 1000px;
