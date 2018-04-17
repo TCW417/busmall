@@ -1,20 +1,21 @@
 'use strict';
 
 // Globals
-var productID = 0; // Give each product an internal ID
-var prodArray = []; // Array of product objects
-var voteCount = 25; // When === 0 show results
-var usedLastTurn = [999,999,999]; // ID's of last turn's pics
-var tableauSize; // number of product pics to display
-var sessionNum, userName;
+Product.productID = 0; // Give each product an internal ID
+Product.prodArray = []; // Array of product objects
+Product.voteCount = 25; // When === 0 show results
+Product.usedLastTurn = [999,999,999]; // ID's of last turn's pics
+Product.tableauSize; // number of product pics to display
+Product.sessionNum = 0; // session number of this user's voting
+Product.userName = ''; // this user's name
 // Constructor for Product object
 function Product(productName, imgFileName) {
   this.name = productName;
   this.src = 'img/' + imgFileName;
   this.displayCount = 0;
   this.clickCount = 0;
-  this.ID = productID++;
-  prodArray.push(this);
+  this.ID = Product.productID++;
+  Product.prodArray.push(this);
 }
 
 Product.prototype.votesPerView = function() {
@@ -52,14 +53,14 @@ function getRandomImageIndices(tableauSize) {
   var i = 0;
   var usedThisTurn = [];
   while (i < tableauSize) {
-    var r = Math.floor(Math.random() * prodArray.length);
-    if (!usedLastTurn.includes(r) && !usedThisTurn.includes(r)) { // r is unique last turn
+    var r = Math.floor(Math.random() * Product.prodArray.length);
+    if (!Product.usedLastTurn.includes(r) && !usedThisTurn.includes(r)) { // r is unique last turn
       usedThisTurn.push(r);
       i++;
     }
   }
-  console.log('last turn',usedLastTurn,'this turn',usedThisTurn);
-  usedLastTurn = usedThisTurn;
+  console.log('last turn',Product.usedLastTurn,'this turn',usedThisTurn);
+  Product.usedLastTurn = usedThisTurn;
   return usedThisTurn;
 }
 
@@ -71,21 +72,21 @@ function displayProductImages(tableauSize) {
     // modify DOM for image to display file and name
     var imgEl = document.getElementById(
       'i'+img);
-    imgEl.src = prodArray[displayList[img]].src;
+    imgEl.src = Product.prodArray[displayList[img]].src;
     var capEl = document.getElementById('c'+img);
-    capEl.textContent = prodArray[displayList[img]].name;
+    capEl.textContent = Product.prodArray[displayList[img]].name;
     // add pid attributes to image, caption and figure
     // Needed because user could click on any of these to vote
-    var pID = prodArray[displayList[img]].ID;
+    var pID = Product.prodArray[displayList[img]].ID;
     imgEl.setAttribute('pid', pID);
     capEl.setAttribute('pid', pID);
     var figEl = document.getElementById('f'+img);
     figEl.setAttribute('pid', pID);
-    prodArray[displayList[img]].displayCount++;
+    Product.prodArray[displayList[img]].displayCount++;
   }
   // update votes remaining tally
   var vcEl = document.getElementById('votes-left');
-  vcEl.textContent = voteCount;
+  vcEl.textContent = Product.voteCount;
 }
 
 function figureClicked(e) {
@@ -93,16 +94,16 @@ function figureClicked(e) {
   var prodID = e.target.getAttribute('pid');
   console.log(prodID);
   // increment it's vote count
-  prodArray[prodID].clickCount++;
+  Product.prodArray[prodID].clickCount++;
   // decrement global vote count and update display
-  voteCount--;
+  Product.voteCount--;
 
-  if (voteCount > 0) {
+  if (Product.voteCount > 0) {
   // display more images
-    displayProductImages(tableauSize);
+    displayProductImages(Product.tableauSize);
   } else {
     // shut down listeners and display results
-    stopListening(tableauSize);
+    stopListening(Product.tableauSize);
     displayResults();
   }
 }
@@ -151,13 +152,13 @@ function displayResults() {
 
   // Loop through Products displaying results
 
-  for (var p = 0; p < prodArray.length; p++) {
-    console.log(prodArray[p].name, prodArray[p].clickCount,prodArray[p].displayCount,prodArray[p].votesPerView());
+  for (var p = 0; p < Product.prodArray.length; p++) {
+    console.log(Product.prodArray[p].name, Product.prodArray[p].clickCount,Product.prodArray[p].displayCount,Product.prodArray[p].votesPerView());
     trEl = document.createElement('tr');
-    createTextElement('td',prodArray[p].name,trEl);
-    createTextElement('td',prodArray[p].clickCount,trEl);
-    createTextElement('td',prodArray[p].displayCount,trEl);
-    createTextElement('td',prodArray[p].votesPerView(),trEl);
+    createTextElement('td',Product.prodArray[p].name,trEl);
+    createTextElement('td',Product.prodArray[p].clickCount,trEl);
+    createTextElement('td',Product.prodArray[p].displayCount,trEl);
+    createTextElement('td',Product.prodArray[p].votesPerView(),trEl);
     tableEl.appendChild(trEl);
   }
 }
@@ -197,9 +198,9 @@ function createFigureElement(figNum) {
 
 function getUserInput() {
 
-  userName = document.getElementById('userName').value;
-  sessionNum = parseInt(document.getElementById('session').value);
-  tableauSize = parseInt(document.querySelector('input[name="tableauSize"]:checked').value);
+  Product.userName = document.getElementById('userName').value;
+  Product.sessionNum = parseInt(document.getElementById('session').value);
+  Product.tableauSize = parseInt(document.querySelector('input[name="tableauSize"]:checked').value);
 
   // stop listening
   var formEl = document.getElementById('submit');
@@ -233,13 +234,13 @@ function voteProducts() {
 
   insertTableauHeading();
 
-  for (var f = 0; f < tableauSize; f++) {
+  for (var f = 0; f < Product.tableauSize; f++) {
     createFigureElement(f);
   }
 
-  displayProductImages(tableauSize);
+  displayProductImages(Product.tableauSize);
 
-  startListening(tableauSize);
+  startListening(Product.tableauSize);
 }
 
 var formEl = document.getElementById('submit');
