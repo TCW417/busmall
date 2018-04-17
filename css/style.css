@@ -29,7 +29,7 @@ div#input-form {
   display: block;
   text-align: center;
   font-family: sans-serif;
-  font-size: 100%;
+  font-size: 25px;
   margin-top: 50px;
   /* width: 100%; */
   margin-right: auto;
@@ -38,12 +38,35 @@ div#input-form {
 div#input-form p {
   margin: 10px;
   padding: 0;
-  font-size: 20px;
+  /* font-size: 20px; */
 }
 
-div#input-form input, select {
-  font-size: 20px;
+div#input-form input, div#input-form select {
+  font-size: 25px;
 }
+
+input[type="radio"] {
+  margin-top: -1px;
+  vertical-align: middle;
+}
+
+button#submit {
+  width: 150px;
+  height: 45px;
+  border-radius: 10px;
+  background-color: #ddd;
+  /* line-height: 45px; */
+  font-size: 25px;
+  /* color: red; */
+  margin-top: 20px;
+}
+button#submit:hover {
+  background-color: #999;
+}
+button#submit:active {
+  background-color: #555;
+}
+
 div#product-pics {
   display: block;
   width: 1000px;
