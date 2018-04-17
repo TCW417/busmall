@@ -3,8 +3,9 @@
 // Globals
 var productID = 0; // Give each product an internal ID
 var prodArray = []; // Array of product objects
-var voteCount = 25; // When === 0 show results
+var voteCount = 5; // When === 0 show results
 var usedLastTurn = [999,999,999]; // ID's of last turn's pics
+var tableauSize = 7; // number of product pics to display
 
 // Constructor for Product object
 function Product(productName, imgFileName) {
@@ -45,12 +46,12 @@ new Product('Wiggling USB Dragon Tail','usb.gif');
 new Product('Recycling Watering Can','water-can.jpg');
 new Product('Boquet-Retaining Wine Glass','wine-glass.jpg');
 
-function getThreeRandomImageIndices() {
+function getRandomImageIndices(tableauSize) {
   // return three random product indexes that aren't in
   // usedLastTurn array
   var i = 0;
   var usedThisTurn = [];
-  while (i < 3) {
+  while (i < tableauSize) {
     var r = Math.floor(Math.random() * prodArray.length);
     if (!usedLastTurn.includes(r) && !usedThisTurn.includes(r)) { // r is unique last turn
       usedThisTurn.push(r);
@@ -62,11 +63,10 @@ function getThreeRandomImageIndices() {
   return usedThisTurn;
 }
 
-
-function displayThreeImages() {
-  // Select three images at random that weren't used last turn
-  var displayList = getThreeRandomImageIndices();
-  // Display the three images on the page
+// Select product images at random that weren't used last turn
+function displayProductImages(tableauSize) {
+  var displayList = getRandomImageIndices(tableauSize);
+  // Display the images on the page
   for (var img = 0; img < displayList.length; img++) {
     // modify DOM for image to display file and name
     var imgEl = document.getElementById(
@@ -98,31 +98,27 @@ function figureClicked(e) {
   voteCount--;
 
   if (voteCount > 0) {
-  // display three more images
-    displayThreeImages();
+  // display more images
+    displayProductImages(tableauSize);
   } else {
     // shut down listeners and display results
-    stopListening();
+    stopListening(tableauSize);
     displayResults();
   }
 }
 
-function stopListening() {
-  var figure0 = document.getElementById('f0');
-  figure0.removeEventListener('click',figureClicked);
-  var figure1 = document.getElementById('f1');
-  figure1.removeEventListener('click', figureClicked);
-  var figure2 = document.getElementById('f2');
-  figure2.removeEventListener('click', figureClicked);
+function startListening(tableauSize) {
+  for (var p = 0; p < tableauSize; p++) {
+    var figure = document.getElementById('f'+p);
+    figure.addEventListener('click',figureClicked);
+  }
 }
 
-function startListening() {
-  var figure0 = document.getElementById('f0');
-  figure0.addEventListener('click',figureClicked);
-  var figure1 = document.getElementById('f1');
-  figure1.addEventListener('click', figureClicked);
-  var figure2 = document.getElementById('f2');
-  figure2.addEventListener('click', figureClicked);
+function stopListening(tableauSize) {
+  for (var p = 0; p < tableauSize; p++) {
+    var figure = document.getElementById('f'+p);
+    figure.removeEventListener('click',figureClicked);
+  }
 }
 
 function displayResults() {
@@ -171,6 +167,38 @@ function createTextElement(tag, text, parent) {
   el.textContent = text;
   parent.appendChild(el);
 }
-displayThreeImages();
 
-startListening();
+function createFigureElement(figNum) {
+  // This is what we want to append to the #product-pics div
+  // <figure id="f0">
+  //   <img src="" id="i0"/>
+  //   <figcaption id="c0"></figcaption>
+  // </figure>
+  var ppDiv = document.getElementById('product-pics');
+
+  // new figure element
+  var newFig = document.createElement('figure');
+  newFig.setAttribute('id','f' + figNum);
+
+  // new img element (blank for now)
+  var newImg = document.createElement('img');
+  newImg.setAttribute('id','i' + figNum);
+  newImg.setAttribute('src','');
+  newFig.appendChild(newImg); // append to figure element
+
+  // new figcaption (blank for now)
+  var newCap = document.createElement('figcaption');
+  newCap.setAttribute('id','c' + figNum);
+  newFig.appendChild(newCap);
+
+  // append to division
+  ppDiv.appendChild(newFig);
+}
+
+for (var f = 0; f < tableauSize; f++) {
+  createFigureElement(f);
+}
+
+displayProductImages(tableauSize);
+
+startListening(tableauSize);
