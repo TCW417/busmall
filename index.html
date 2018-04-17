@@ -9,22 +9,32 @@
     <h1>Bus Mall Market Research</h1>
   </header>
   <main>
-    <div id="product-pics">
-      <!-- <figure id="f0">
-        <img src="" id="i0"/>
-        <figcaption id="c0"></figcaption>
-      </figure>
-      <figure id="f1">
-        <img src="" id="i1"/>
-        <figcaption id="c1"></figcaption>
-      </figure>
-      <figure id="f2">
-        <img src="" id="i2"/>
-        <figcaption id="c2"></figcaption>
-      </figure> -->
+    <div id="input-form">
+      <form>
+        <fieldset id="user-input">
+          <h4>Please enter your name, session number and product display:</h4>
+          <p><label for="userName">Your name:</label>
+          <input type="text" id="userName" name="userName" /></p>
+          <p><label for="session">Focus Group Session</label>
+          <select id="session" name="session">
+            <option value="1">Session 1</option>
+            <option value="2">Session 2</option>
+            <option value="3">Session 3</option>
+            <option value="4">Session 4</option>
+          </select></p>
+          <div  id="tableauSize"><label for="tableauSize">Please choose number of products to display</label>
+          <input type="radio" name="tableauSize" value="3" checked="checked" />3
+          <input type="radio" name="tableauSize" value="6" />6
+          <input type="radio" name="tableauSize" value="9" />9</div>
+          <input type="submit" id="submit" value="Submit" />
+        </fieldset>
+      </form>
     </div>
-    <h3>Click on the product you'd be most likely to purchase</h3>
-    <h4><span id="votes-left">25</span> Votes Remaining</h4>
+    <div id="product-pics">
+    </div>
+    <div id="product-headings"></div>
+    <!-- <h3>Click on the product you'd be most likely to purchase</h3>
+    <h4><span id="votes-left">25</span> Votes Remaining</h4> -->
   </main>
   <footer>
   </footer>

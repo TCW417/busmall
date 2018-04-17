@@ -195,10 +195,46 @@ function createFigureElement(figNum) {
   ppDiv.appendChild(newFig);
 }
 
-for (var f = 0; f < tableauSize; f++) {
-  createFigureElement(f);
+function getUserInput() {
+
+  var userName = document.getElementById('userName').value;
+  var sessionNum = parseInt(document.getElementById('session').value);
+  var tableauSize = parseInt(document.querySelector('input[name="tableauSize"]:checked').value);
+
+  clearUserInputForm();
+
+  voteProducts();
 }
 
-displayProductImages(tableauSize);
+function clearUserInputForm() {
+  // delete <main> element from page
+  debugger;
+  var mainEl = document.body.getElementsByTagName('main')[0];
+  document.body.removeChild(mainEl);
+}
 
-startListening(tableauSize);
+function insertTableauHeading() {
+  var mainEl = document.getElementById('product-headings');
+  var heading = document.createElement('h3');
+  heading.textContent = 'Click on the product you\'d be most likely to purchase';
+  mainEl.appendChild(heading);
+  var subHeading = document.createElement('h4');
+  subHeading.innerHTML = '<span id="votes-left">25</span> Votes Remaining';
+  mainEl.appendChild(subHeading);
+}
+
+function voteProducts() {
+
+  insertTableauHeading();
+
+  for (var f = 0; f < tableauSize; f++) {
+    createFigureElement(f);
+  }
+
+  displayProductImages(tableauSize);
+
+  startListening(tableauSize);
+}
+
+var formEl = document.getElementById('submit');
+formEl.addEventListener('click', getUserInput);
