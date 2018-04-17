@@ -23,6 +23,8 @@ function Product(productName, imgFileName) {
   this.src = 'img/' + imgFileName;
   this.displayCount = 0;
   this.clickCount = 0;
+  this.affinity = 0;
+  this.chartColor = 0;
   this.ID = Product.productID++;
   Product.prodArray.push(this);
 }
@@ -32,7 +34,8 @@ Product.prototype.votesPerView = function() {
   if (this.displayCount !== 0) {
     rv = (this.clickCount / this.displayCount) * 100;
   }
-  return Number.parseFloat(rv); //.toPrecision(1);
+  this.affinity = Number.parseFloat(rv);
+  return this.affinity;
 };
 
 new Product('C3P0 Rolling Suitcase','bag.jpg');
@@ -127,6 +130,20 @@ Product.stopListening = function() {
   figures.removeEventListener('click', Product.figureClicked);
 };
 
+Product.updateAffinityResults = function() {
+  // call votesPerView method on each product
+  for (var i of Product.prodArray) {
+    i.votesPerView();
+  }
+};
+
+Product.pickChartColors = function() {
+  var colors = Product.genRandomColors(); //get array of colors
+  for (var i in Product.prodArray) {
+    Product.prodArray[i].chartColor = colors[i];
+  }
+};
+
 Product.displayResults = function() {
   console.log('Display Results Here');
   // delete <main> element from page
@@ -150,7 +167,13 @@ Product.displayResults = function() {
   Product.createCanvas('chart1', mainEl);
 
   // Gather voting data into arrays for graphing
-  Product.collectChartData();
+  // update affinity values of each product
+  Product.updateAffinityResults();
+  // Give each product it's own chart color
+  Product.pickChartColors();
+
+  // first sort on votes
+  Product.collectChartData('clickCount');
 
   // Create bar chart
   var ctx0 = document.getElementById('chart0').getContext('2d');
@@ -190,6 +213,9 @@ Product.displayResults = function() {
       }
     }
   });
+
+  // then sort on affinity
+  Product.collectChartData('affinity');
 
   var ctx1 = document.getElementById('chart1').getContext('2d');
   var affinitiesChart = new Chart(ctx1, {
@@ -317,15 +343,43 @@ Product.voteProducts = function() {
   Product.startListening();
 };
 
+// Sort all prodArray entries on keyname value
+// use a bubble sort.
+Product.sortProdArrayOn = function(keyName) {
+  var swap = function(i, j) {
+    var temp = Product.prodArray[i];
+    Product.prodArray[i] = Product.prodArray[j];
+    Product.prodArray[j] = temp;
+  };
+  var swapped;
+  do {
+    swapped = false;
+    for (var p = 0; p < Product.prodArray.length; p++) {
+      if (Product.prodArray[p] && Product.prodArray[p+1] && Product.prodArray[p][keyName] < Product.prodArray[p+1][keyName]) {
+        swap(p, p+1);
+        swapped = true;
+      }
+    }
+  } while (swapped);
+};
 
-Product.collectChartData = function() {
+// Gather charting data sorted on keyName. Return new object array?
+Product.collectChartData = function(keyName) {
+  Product.sortProdArrayOn(keyName);
+  // clear all arrays
+  Product.chartData.allProdNames = [];
+  Product.chartData.allVotes = [];
+  Product.chartData.allViews = [];
+  Product.chartData.allAffinities = [];
+  Product.chartData.allColors = [];
+  // populate the chart data arrays
   for (var p = 0; p < Product.prodArray.length; p++) {
     Product.chartData.allProdNames.push(Product.prodArray[p].name);
     Product.chartData.allVotes.push(Product.prodArray[p].clickCount);
     Product.chartData.allViews.push(Product.prodArray[p].displayCount);
-    Product.chartData.allAffinities.push(Product.prodArray[p].votesPerView());
+    Product.chartData.allAffinities.push(Product.prodArray[p].affinity);
+    Product.chartData.allColors.push(Product.prodArray[p].chartColor);
   }
-  Product.chartData.allColors = Product.genRandomColors(); // get chart colors
 };
 
 Product.genRandomColors = function() {
