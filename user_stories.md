@@ -9,7 +9,7 @@
 
 ## Focus Group Member
 
-* As a Focus Group Member (FGM), I want to use a nice looking interactive site that knows my name and uses it.
+* As a Focus Group Member (FGM), I want to use a nice looking interactive site.
 * As a FGM I want to simply click on an image to vote for it.
 * As a FGM I want visual confirmation that my vote has been recorded.
 * As a FGM I want all product images to be uniform size.
