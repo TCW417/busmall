@@ -3,10 +3,10 @@
 // Globals
 var productID = 0; // Give each product an internal ID
 var prodArray = []; // Array of product objects
-var voteCount = 5; // When === 0 show results
+var voteCount = 25; // When === 0 show results
 var usedLastTurn = [999,999,999]; // ID's of last turn's pics
-var tableauSize = 7; // number of product pics to display
-
+var tableauSize; // number of product pics to display
+var sessionNum, userName;
 // Constructor for Product object
 function Product(productName, imgFileName) {
   this.name = productName;
@@ -197,20 +197,26 @@ function createFigureElement(figNum) {
 
 function getUserInput() {
 
-  var userName = document.getElementById('userName').value;
-  var sessionNum = parseInt(document.getElementById('session').value);
-  var tableauSize = parseInt(document.querySelector('input[name="tableauSize"]:checked').value);
+  userName = document.getElementById('userName').value;
+  sessionNum = parseInt(document.getElementById('session').value);
+  tableauSize = parseInt(document.querySelector('input[name="tableauSize"]:checked').value);
 
+  // stop listening
+  var formEl = document.getElementById('submit');
+  formEl.removeEventListener('click', getUserInput);
+
+  // remove input form from page
   clearUserInputForm();
 
+  // begin voting products
   voteProducts();
 }
 
 function clearUserInputForm() {
   // delete <main> element from page
-  debugger;
-  var mainEl = document.body.getElementsByTagName('main')[0];
-  document.body.removeChild(mainEl);
+  var formEl = document.getElementById('input-form');
+  formEl.parentNode.removeChild(formEl);
+  return false;
 }
 
 function insertTableauHeading() {
