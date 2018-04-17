@@ -19,12 +19,18 @@ Product.chartData = {
 
 // Constructor for Product object
 function Product(productName, imgFileName) {
+  // var rgb = function(r, g, b) {
+  //   return '#' + r.toString(16) + g.toString(16) + b.toString(16);
+  // };
   this.name = productName;
   this.src = 'img/' + imgFileName;
   this.displayCount = 0;
   this.clickCount = 0;
   this.affinity = 0;
-  this.chartColor = 0;
+  // var r = 120;
+  // var g = 100 + (Product.productID * 7);
+  // var b = 250 - (Product.productID * 7);
+  this.chartColor = 0; //rgb(r, g, b);
   this.ID = Product.productID++;
   Product.prodArray.push(this);
 }
@@ -36,6 +42,19 @@ Product.prototype.votesPerView = function() {
   }
   this.affinity = Number.parseFloat(rv);
   return this.affinity;
+};
+
+Product.rgb = function(r, g, b) {
+  return '#' + r.toString(16) + g.toString(16) + b.toString(16);
+};
+
+Product.prototype.genChartColor = function() {
+  var factor = (255 - 100) / Product.prodArray.length;
+  var r = 120;
+  var g = Math.floor(100 + (this.ID * factor));
+  var b = Math.floor(250 - (this.ID * factor));
+  this.chartColor = Product.rgb(r, g, b);
+  console.log('genColor r g b chartColor', r, g, b, this.chartColor);
 };
 
 new Product('C3P0 Rolling Suitcase','bag.jpg');
@@ -138,9 +157,9 @@ Product.updateAffinityResults = function() {
 };
 
 Product.pickChartColors = function() {
-  var colors = Product.genRandomColors(); //get array of colors
+//  var colors = Product.genRandomColors(); //get array of colors
   for (var i in Product.prodArray) {
-    Product.prodArray[i].chartColor = colors[i];
+    Product.prodArray[i].genChartColor();
   }
 };
 
@@ -172,7 +191,7 @@ Product.displayResults = function() {
   // Give each product it's own chart color
   Product.pickChartColors();
 
-  // first sort on votes
+  // first collect data and sort on votes
   Product.collectChartData('clickCount');
 
   // Create bar chart
@@ -365,7 +384,9 @@ Product.sortProdArrayOn = function(keyName) {
 
 // Gather charting data sorted on keyName. Return new object array?
 Product.collectChartData = function(keyName) {
+
   Product.sortProdArrayOn(keyName);
+
   // clear all arrays
   Product.chartData.allProdNames = [];
   Product.chartData.allVotes = [];
