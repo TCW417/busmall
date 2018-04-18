@@ -23,85 +23,80 @@ function Product(productName, imgFileName) {
   this.src = 'img/' + imgFileName;
   this.displayCount = 0;
   this.clickCount = 0;
+  this.affinity = 0;
+  this.chartColor = 0;
   this.ID = Product.productID++;
-  Product.prodArray.push(this);
+  Product.prodArray.push(this); // Add newly created object to product array
 }
 
+// Method: Calculate affinity (votes/views) for this object
 Product.prototype.votesPerView = function() {
   var rv = 0;
-  if (this.displayCount !== 0) {
+  if (this.displayCount !== 0) { // Protect against zero displays (shouldn't happen but...)
     rv = (this.clickCount / this.displayCount) * 100;
   }
-  return Number.parseFloat(rv); //.toPrecision(1);
+  this.affinity = Number.parseFloat(rv);
 };
 
-new Product('C3P0 Rolling Suitcase','bag.jpg');
-new Product('Banana Slicer','banana.jpg');
-new Product('Bathroom iPad Stand','bathroom.jpg');
-new Product('Self Draining Boots','boots.jpg');
-new Product('All-In-One Breakfast Appliance','breakfast.jpg');
-new Product('Yummy Meatball Bubblegum','bubblegum.jpg');
-new Product('Over-inflated Chair','chair.jpg');
-new Product('Toy Gargoyl','cthulhu.jpg');
-new Product('Duck\'s Beak Muzzle','dog-duck.jpg');
-new Product('Canned Dragon Meat','dragon.png');
-new Product('Bic Pen Cap Cutlery','pen-left.png');
-new Product('Floor Sweeping Pet Footies','pet-sweep.jpg');
-new Product('Pizza Cutting Scissors','scissors.jpg');
-new Product('Kid\'s Shark Sleeping Bag','shark.jpg');
-new Product('Baby Sweeping Onesie','sweep.png');
-new Product('Star Wars Taun Taun Sleeping Bag','tauntaun.jpg');
-new Product('Canned Unicorn Meat','unicorn.jpg');
-new Product('Wiggling USB Dragon Tail','usb.gif');
-new Product('Recycling Watering Can','water-can.jpg');
-new Product('Boquet-Retaining Wine Glass','wine-glass.jpg');
+// Method: Generate chart color for this based on its ID number
+Product.prototype.genChartColor = function() {
+  var rgb = function(r, g, b) {
+    return '#' + r.toString(16) + g.toString(16) + b.toString(16);
+  };
+  var factor = (255 - 100) / Product.prodArray.length;
+  var r = 120;
+  var g = Math.floor(100 + (this.ID * factor));
+  var b = Math.floor(250 - (this.ID * factor));
+  this.chartColor = rgb(r, g, b);
+};
 
+// Return set of array indices that are unique between turns
 Product.getRandomImageIndices = function(tableauSize) {
-  // return three random product indexes that aren't in
-  // usedLastTurn array
   var i = 0;
-  var usedThisTurn = [];
-  while (i < tableauSize) {
-    var r = Math.floor(Math.random() * Product.prodArray.length);
-    if (!Product.usedLastTurn.includes(r) && !usedThisTurn.includes(r)) { // r is unique last turn
+  var usedThisTurn = []; // put this turn's indices here
+  while (i < tableauSize) { // for each "cell" in the picture tableau
+    var r = Math.floor(Math.random() * Product.prodArray.length); // get a random index
+    // test r against last turn's products and what's been picked so for for this turn
+    if (!Product.usedLastTurn.includes(r) && !usedThisTurn.includes(r)) {
+      // It's unique. Add it to the this turn array
       usedThisTurn.push(r);
       i++;
     }
   }
-  console.log('last turn',Product.usedLastTurn,'this turn',usedThisTurn);
-  Product.usedLastTurn = usedThisTurn;
+  Product.usedLastTurn = usedThisTurn; // save this turn as last turn for next turn...
   return usedThisTurn;
 };
 
-// Select product images at random that weren't used last turn
+// Display a tableau's worth of product images
 Product.displayProductImages = function(tableauSize) {
+  // get a list of unique random array indices
   var displayList = Product.getRandomImageIndices(tableauSize);
   // Display the images on the page
   for (var img = 0; img < displayList.length; img++) {
     // modify DOM for image to display file and name
-    var imgEl = document.getElementById(
-      'i'+img);
-    imgEl.src = Product.prodArray[displayList[img]].src;
+    var imgEl = document.getElementById('i'+img);
+    imgEl.src = Product.prodArray[displayList[img]].src; // set image src attribute
     var capEl = document.getElementById('c'+img);
-    capEl.textContent = Product.prodArray[displayList[img]].name;
+    capEl.textContent = Product.prodArray[displayList[img]].name; // update image caption
     // add pid attributes to image, caption and figure
     // Needed because user could click on any of these to vote
-    var pID = Product.prodArray[displayList[img]].ID;
-    imgEl.setAttribute('pid', pID);
-    capEl.setAttribute('pid', pID);
+    imgEl.setAttribute('pid', Product.prodArray[displayList[img]].ID);
+    capEl.setAttribute('pid', Product.prodArray[displayList[img]].ID);
     var figEl = document.getElementById('f'+img);
-    figEl.setAttribute('pid', pID);
+    figEl.setAttribute('pid', Product.prodArray[displayList[img]].ID);
+    // Increment product's displayed counter
     Product.prodArray[displayList[img]].displayCount++;
   }
-  // update votes remaining tally
+  // update votes remaining tally on screen
   var vcEl = document.getElementById('votes-left');
   vcEl.textContent = Product.voteCount;
 };
 
+// Event listener for click on product image
 Product.figureClicked = function(e) {
   // figure out which product is displayed
   var prodID = e.target.getAttribute('pid');
-  console.log(prodID);
+  console.log(prodID, 'clicked');
   // increment it's vote count
   Product.prodArray[prodID].clickCount++;
   // decrement global vote count and update display
@@ -117,18 +112,35 @@ Product.figureClicked = function(e) {
   }
 };
 
+// Add listener to product pics
 Product.startListening = function() {
   var figures = document.getElementById('product-pics');
   figures.addEventListener('click', Product.figureClicked);
 };
 
+// Remove listener from product pics
 Product.stopListening = function() {
   var figures = document.getElementById('product-pics');
   figures.removeEventListener('click', Product.figureClicked);
 };
 
-Product.displayResults = function() {
-  console.log('Display Results Here');
+// After voting, generate affinity values for each product
+Product.updateAffinityResults = function() {
+  // call votesPerView method on each product
+  for (var i of Product.prodArray) {
+    i.votesPerView();
+  }
+};
+
+// Pick a chart color for each product
+Product.pickChartColors = function() {
+  for (var i in Product.prodArray) {
+    Product.prodArray[i].genChartColor();
+  }
+};
+
+// Setup page headings for results display
+Product.resultsDisplayHeadings = function() {
   // delete <main> element from page
   var mainEl = document.body.getElementsByTagName('main')[0];
   document.body.removeChild(mainEl);
@@ -144,17 +156,29 @@ Product.displayResults = function() {
   var h2El = document.createElement('h2');
   h2El.textContent = 'Voting Results';
   mainEl.appendChild(h2El);
+};
 
-  // Add new canvas elements
+// Display voting results
+Product.displayResults = function() {
+  console.log('Display Results');
+  // Prep page for charts
+  Product.resultsDisplayHeadings();
+  // Add new canvas elements to page
+  var mainEl = document.body.getElementsByTagName('main')[0];
   Product.createCanvas('chart0', mainEl);
   Product.createCanvas('chart1', mainEl);
 
   // Gather voting data into arrays for graphing
-  Product.collectChartData();
+  // update affinity values of each product
+  Product.updateAffinityResults();
+  // Give each product it's own chart color
+  Product.pickChartColors();
+  // first collect data and sort on votes
+  Product.collectChartData('clickCount');
 
   // Create bar chart
   var ctx0 = document.getElementById('chart0').getContext('2d');
-  var votesChart = new Chart(ctx0, {
+  new Chart(ctx0, {
     type: 'horizontalBar',
     data: {
       labels: Product.chartData.allProdNames,
@@ -191,8 +215,11 @@ Product.displayResults = function() {
     }
   });
 
+  // then sort on affinity and create another bar chart
+  Product.collectChartData('affinity');
+
   var ctx1 = document.getElementById('chart1').getContext('2d');
-  var affinitiesChart = new Chart(ctx1, {
+  new Chart(ctx1, {
     type: 'horizontalBar',
     data: {
       labels: Product.chartData.allProdNames,
@@ -230,12 +257,14 @@ Product.displayResults = function() {
   });
 };
 
+// Helper: Create a text element <tag>text</tag> in <parent>
 Product.createTextElement = function(tag, text, parent) {
   var el = document.createElement(tag);
   el.textContent = text;
   parent.appendChild(el);
 };
 
+// Helper: create a canvas element with id in parentEl
 Product.createCanvas = function(canvasId, parentEl) {
   var canvasEl = document.createElement('canvas');
   canvasEl.setAttribute('width','1000');
@@ -243,25 +272,22 @@ Product.createCanvas = function(canvasId, parentEl) {
   parentEl.appendChild(canvasEl);
 };
 
+// Append a <figure> element to <div id=product-pics>
 Product.createFigureElement = function(figNum) {
-  // This is what we want to append to the #product-pics div
-  // <figure id="f0">
-  //   <img src="" id="i0"/>
-  //   <figcaption id="c0"></figcaption>
-  // </figure>
+  // Get product-pics div element
   var ppDiv = document.getElementById('product-pics');
 
-  // new figure element
+  // create new figure element and assign figNum as id
   var newFig = document.createElement('figure');
   newFig.setAttribute('id','f' + figNum);
 
-  // new img element (blank for now)
+  // add new img element (blank for now)
   var newImg = document.createElement('img');
   newImg.setAttribute('id','i' + figNum);
   newImg.setAttribute('src','');
   newFig.appendChild(newImg); // append to figure element
 
-  // new figcaption (blank for now)
+  // add new figcaption (blank for now)
   var newCap = document.createElement('figcaption');
   newCap.setAttribute('id','c' + figNum);
   newFig.appendChild(newCap);
@@ -270,13 +296,14 @@ Product.createFigureElement = function(figNum) {
   ppDiv.appendChild(newFig);
 };
 
+// Listener on user input form submit button
 Product.getUserInput = function() {
-
+  // get name, session and tableauSize
   Product.userName = document.getElementById('userName').value;
   Product.sessionNum = parseInt(document.getElementById('session').value);
   Product.tableauSize = parseInt(document.querySelector('input[name="tableauSize"]:checked').value);
 
-  // stop listening
+  // stop listening for user input
   var formEl = document.getElementById('submit');
   formEl.removeEventListener('click', Product.getUserInput);
 
@@ -287,6 +314,7 @@ Product.getUserInput = function() {
   Product.voteProducts();
 };
 
+// Delete user input html from page prior to displaying product pics
 Product.clearUserInputForm = function() {
   // delete <main> element from page
   var formEl = document.getElementById('input-form');
@@ -294,6 +322,7 @@ Product.clearUserInputForm = function() {
   return false;
 };
 
+// Add headings to page for the voting process including votes remaining
 Product.insertTableauHeading = function() {
   var mainEl = document.getElementById('product-headings');
   var heading = document.createElement('h3');
@@ -304,44 +333,104 @@ Product.insertTableauHeading = function() {
   mainEl.appendChild(subHeading);
 };
 
+// Collect votes for the products
 Product.voteProducts = function() {
-
+  // setup HTML elements for the voting process
+  // 1) add tableau heading to the page
   Product.insertTableauHeading();
-
+  // 2) add figure elements
   for (var f = 0; f < Product.tableauSize; f++) {
     Product.createFigureElement(f);
   }
-
+  // Display intial set of product images
   Product.displayProductImages(Product.tableauSize);
-
+  // Start listening for votes
   Product.startListening();
 };
 
+// Sort all prodArray entries on keyname value
+Product.sortProdArrayOn = function(keyName) {
+  // This is a standard bubble sort
+  var swap = function(i, j) {
+    var temp = Product.prodArray[i];
+    Product.prodArray[i] = Product.prodArray[j];
+    Product.prodArray[j] = temp;
+  };
+  var swapped;
+  do {
+    swapped = false;
+    for (var p = 0; p < Product.prodArray.length; p++) {
+      if (Product.prodArray[p] && Product.prodArray[p+1] && Product.prodArray[p][keyName] < Product.prodArray[p+1][keyName]) {
+        swap(p, p+1);
+        swapped = true;
+      }
+    }
+  } while (swapped);
+};
 
-Product.collectChartData = function() {
+// Gather charting data sorted on keyName.
+Product.collectChartData = function(keyName) {
+  // Sort products by keyName (typically clickCount (aka votes) or affinity (votes/views))
+  Product.sortProdArrayOn(keyName);
+  // clear all arrays (needed between sorts otherwise we get 2x data)
+  Product.chartData.allProdNames = [];
+  Product.chartData.allVotes = [];
+  Product.chartData.allViews = [];
+  Product.chartData.allAffinities = [];
+  Product.chartData.allColors = [];
+  // populate the chart data arrays
   for (var p = 0; p < Product.prodArray.length; p++) {
     Product.chartData.allProdNames.push(Product.prodArray[p].name);
     Product.chartData.allVotes.push(Product.prodArray[p].clickCount);
     Product.chartData.allViews.push(Product.prodArray[p].displayCount);
-    Product.chartData.allAffinities.push(Product.prodArray[p].votesPerView());
+    Product.chartData.allAffinities.push(Product.prodArray[p].affinity);
+    Product.chartData.allColors.push(Product.prodArray[p].chartColor);
   }
-  Product.chartData.allColors = Product.genRandomColors(); // get chart colors
 };
 
-Product.genRandomColors = function() {
-  var ca = [], c, r, g, b, i = 0;
-  while (i < Product.prodArray.length) {
-    r = Math.floor(Math.random() * 0xF * 0xF).toString(16);
-    g = Math.floor(Math.random() * 0xF * 0xE).toString(16);
-    b = Math.floor(Math.random() * 0xF * 0xF).toString(16);
-    c = '#'+ r + g + b;
-    if (!ca.includes(c)) {
-      ca.push(c);
-    }
-    i++;
-  }
-  return ca;
+// Product.genRandomColors = function() {
+//   var ca = [], c, r, g, b, i = 0;
+//   while (i < Product.prodArray.length) {
+//     r = Math.floor(Math.random() * 0xF * 0xF).toString(16);
+//     g = Math.floor(Math.random() * 0xF * 0xE).toString(16);
+//     b = Math.floor(Math.random() * 0xF * 0xF).toString(16);
+//     c = '#'+ r + g + b;
+//     if (!ca.includes(c)) {
+//       ca.push(c);
+//     }
+//     i++;
+//   }
+//   return ca;
+// };
+
+// Initialize objects and first listener
+Product.init = function() {
+  // instantiate products
+  new Product('C3P0 Rolling Suitcase','bag.jpg');
+  new Product('Banana Slicer','banana.jpg');
+  new Product('Bathroom iPad Stand','bathroom.jpg');
+  new Product('Self Draining Boots','boots.jpg');
+  new Product('All-In-One Breakfast Appliance','breakfast.jpg');
+  new Product('Yummy Meatball Bubblegum','bubblegum.jpg');
+  new Product('Over-inflated Chair','chair.jpg');
+  new Product('Toy Gargoyl','cthulhu.jpg');
+  new Product('Duck\'s Beak Muzzle','dog-duck.jpg');
+  new Product('Canned Dragon Meat','dragon.png');
+  new Product('Bic Pen Cap Cutlery','pen-left.png');
+  new Product('Floor Sweeping Pet Footies','pet-sweep.jpg');
+  new Product('Pizza Cutting Scissors','scissors.jpg');
+  new Product('Kid\'s Shark Sleeping Bag','shark.jpg');
+  new Product('Baby Sweeping Onesie','sweep.png');
+  new Product('Star Wars Taun Taun Sleeping Bag','tauntaun.jpg');
+  new Product('Canned Unicorn Meat','unicorn.jpg');
+  new Product('Wiggling USB Dragon Tail','usb.gif');
+  new Product('Recycling Watering Can','water-can.jpg');
+  new Product('Boquet-Retaining Wine Glass','wine-glass.jpg');
+
+  // start up listener on user input form
+  Product.formEl = document.getElementById('submit');
+  Product.formEl.addEventListener('click', Product.getUserInput);
 };
 
-Product.formEl = document.getElementById('submit');
-Product.formEl.addEventListener('click', Product.getUserInput);
+// Do it!
+Product.init();
