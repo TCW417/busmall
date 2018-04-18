@@ -22,17 +22,35 @@ Product.Vote = function(product, user) {
   this.name = product.name;
   this.user = user;
   this.session = Product.sessionNum;
-  this.dateStamp = new Date(Date.now() - 24*60*60*1000).toLocaleString();
-  // var yesterday = new Date(Date.now() - 24*60*60*1000);
-  // // Convert it to a readable string
-  // var reportDate = new Date(Date.now() - 24*60*60*1000).toLocaleString();
+  this.dateStamp = Date.now();
 };
 Product.votes = []; // all votes cast
+
+// return readable string from date number (like Date.now())
+Product.dateNumToString = function(dateNum) {
+  var d = new Date(dateNum - 24*60*60*1000);
+  return d.toLocaleString();
+};
+
+// Session data object
+Product.sessionIndex = -1; // index into sessions array. will be zero after first session created
+Product.Session = function() {
+  this.sessionNum = Product.sessionNum;
+  this.userName = Product.userName;
+  this.sessionStart = Date.now();
+  this.sessionEnd = 0;
+  Product.sessionIndex++;
+};
+Product.Session.prototype.endSession = function() {
+  this.sessionEnd = Date.now();
+};
+
+Product.sessions = []; // empty array of session objects
 
 // Constructor for Product object
 function Product(productName, imgFileName) {
   this.name = productName;
-  this.src = 'img/' + imgFileName;
+  this.src = imgFileName;
   this.displayCount = 0;
   this.clickCount = 0;
   this.affinity = 0;
@@ -121,6 +139,13 @@ Product.figureClicked = function(e) {
     Product.displayProductImages(Product.tableauSize);
   } else {
     // shut down listeners and display results
+    // but first...
+    // update affinity values of each product
+    Product.updateAffinityResults();
+    // Give each product it's own chart color
+    Product.pickChartColors();
+    localStorage.results = JSON.stringify(Product.prodArray);
+    Product.sessions[Product.sessionIndex].endSession();
     Product.stopListening();
     Product.displayResults();
   }
@@ -183,10 +208,6 @@ Product.displayResults = function() {
   Product.createCanvas('chart1', mainEl);
 
   // Gather voting data into arrays for graphing
-  // update affinity values of each product
-  Product.updateAffinityResults();
-  // Give each product it's own chart color
-  Product.pickChartColors();
   // first collect data and sort on votes
   Product.collectChartData('clickCount');
 
@@ -321,6 +342,9 @@ Product.getUserInput = function() {
   var formEl = document.getElementById('submit');
   formEl.removeEventListener('click', Product.getUserInput);
 
+  // capture session data
+  Product.sessions.push(new Product.Session());
+
   // remove input form from page
   Product.clearUserInputForm();
 
@@ -396,7 +420,7 @@ Product.collectChartData = function(keyName) {
   Product.chartData.allViews = [];
   Product.chartData.allAffinities = [];
   Product.chartData.allColors = [];
-  // populate the chart data arrays
+  // populate the chart data arrays  
   var pObj = Product.objParamDeconstruct(Product.prodArray);
   Product.chartData.allProdNames = pObj.name; 
   Product.chartData.allVotes = pObj.clickCount;
@@ -421,29 +445,44 @@ Product.objParamDeconstruct = function(objArray) {
   return o;
 };
 
+Product.rebuildProdArray = function(fromStorage) {
+  if (fromStorage === null) return null;
+  for (var o of fromStorage) {
+    var p = new Product(o.name, o.src);
+    p.displayCount = o.displayCount;
+    p.clickCount = o.clickCount;
+    p.affinity = o.affinity;
+    p.ID = o.ID;
+  }
+  return Product.prodArray;
+};
+
 // Initialize objects and first listener
 Product.init = function() {
   // instantiate products
-  new Product('C3P0 Rolling Suitcase','bag.jpg');
-  new Product('Banana Slicer','banana.jpg');
-  new Product('Bathroom iPad Stand','bathroom.jpg');
-  new Product('Self Draining Boots','boots.jpg');
-  new Product('All-In-One Breakfast Appliance','breakfast.jpg');
-  new Product('Yummy Meatball Bubblegum','bubblegum.jpg');
-  new Product('Over-inflated Chair','chair.jpg');
-  new Product('Toy Gargoyl','cthulhu.jpg');
-  new Product('Duck\'s Beak Muzzle','dog-duck.jpg');
-  new Product('Canned Dragon Meat','dragon.png');
-  new Product('Bic Pen Cap Cutlery','pen-left.png');
-  new Product('Floor Sweeping Pet Footies','pet-sweep.jpg');
-  new Product('Pizza Cutting Scissors','scissors.jpg');
-  new Product('Kid\'s Shark Sleeping Bag','shark.jpg');
-  new Product('Baby Sweeping Onesie','sweep.png');
-  new Product('Star Wars Taun Taun Sleeping Bag','tauntaun.jpg');
-  new Product('Canned Unicorn Meat','unicorn.jpg');
-  new Product('Wiggling USB Dragon Tail','usb.gif');
-  new Product('Recycling Watering Can','water-can.jpg');
-  new Product('Boquet-Retaining Wine Glass','wine-glass.jpg');
+  Product.prodArray = Product.rebuildProdArray(JSON.parse(localStorage.getItem('results')))
+    || [
+      new Product('C3P0 Rolling Suitcase','img/bag.jpg'),
+      new Product('Banana Slicer','img/banana.jpg'),
+      new Product('Bathroom iPad Stand','img/bathroom.jpg'),
+      new Product('Self Draining Boots','img/boots.jpg'),
+      new Product('All-In-One Breakfast Appliance','img/breakfast.jpg'),
+      new Product('Yummy Meatball Bubblegum','img/bubblegum.jpg'),
+      new Product('Over-inflated Chair','img/chair.jpg'),
+      new Product('Toy Gargoyl','img/cthulhu.jpg'),
+      new Product('Duck\'s Beak Muzzle','img/dog-duck.jpg'),
+      new Product('Canned Dragon Meat','img/dragon.png'),
+      new Product('Bic Pen Cap Cutlery','img/pen-left.png'),
+      new Product('Floor Sweeping Pet Footies','img/pet-sweep.jpg'),
+      new Product('Pizza Cutting Scissors','img/scissors.jpg'),
+      new Product('Kid\'s Shark Sleeping Bag','img/shark.jpg'),
+      new Product('Baby Sweeping Onesie','img/sweep.png'),
+      new Product('Star Wars Taun Taun Sleeping Bag','img/tauntaun.jpg'),
+      new Product('Canned Unicorn Meat','img/unicorn.jpg'),
+      new Product('Wiggling USB Dragon Tail','img/usb.gif'),
+      new Product('Recycling Watering Can','img/water-can.jpg'),
+      new Product('Boquet-Retaining Wine Glass','img/wine-glass.jpg')
+    ];
 
   // start up listener on user input form
   Product.formEl = document.getElementById('submit');
