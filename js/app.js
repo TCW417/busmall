@@ -153,7 +153,8 @@ Product.figureClicked = function(e) {
     localStorage.votes = JSON.stringify(Product.votes);
 
     Product.stopListening();
-    Product.displayResults();
+    Product.prepHtmlForResults(); // put results heading on the page (once)
+    Product.displayResults('clickCount', false); // display votes initially decending sorted on clickCount (votes)
   }
 };
 
@@ -207,7 +208,7 @@ Product.resultsDisplayHeadings = function() {
   <fieldset id="sortSelection">\
     <div  id="sortBy">\
       <label for="sortBy">Sort Voting Results By:</label>\
-      <input type="radio" name="sortBy" value="productName" />Product Name\
+      <input type="radio" name="sortBy" value="name" />Product Name\
       <input type="radio" name="sortBy" value="displayCount" />Views\
       <input type="radio" name="sortBy" value="clickCount" checked="checked" />Votes\
       <input type="radio" name="sortBy" value="affinity" />Affinity\
@@ -220,23 +221,35 @@ Product.resultsDisplayHeadings = function() {
   mainEl.appendChild(divEl);
 };
 
-// Display voting results
-Product.displayResults = function() {
-  console.log('Display Results');
+Product.sortTypeListener = function(e) {
+  console.log('sortTypeListener', e.target.value);
+  if (e.target.value) {
+    Product.topChart.destroy();
+
+    Product.displayResults(e.target.value, (e.target.value === 'name' ? true : false));
+  }
+};
+
+// Add headings to html for chart display
+Product.prepHtmlForResults = function() {
   // Prep page for charts
   Product.resultsDisplayHeadings();
   // Add new canvas elements to page
   var mainEl = document.body.getElementsByTagName('main')[0];
   Product.createCanvas('chart0', mainEl);
   Product.createCanvas('chart1', mainEl);
+};
 
+// Display voting results
+Product.displayResults = function(sortKey, ascending) {
+  console.log('Display Results');
   // Gather voting data into arrays for graphing
   // first collect data and sort on votes
-  Product.collectChartData('clickCount');
+  Product.collectChartData(sortKey, ascending);
 
   // Create bar chart
   var ctx0 = document.getElementById('chart0').getContext('2d');
-  new Chart(ctx0, {
+  Product.topChart = new Chart(ctx0, {
     type: 'horizontalBar',
     data: {
       labels: Product.chartData.allProdNames,
@@ -274,7 +287,7 @@ Product.displayResults = function() {
   });
 
   // then sort on affinity and create another bar chart
-  Product.collectChartData('affinity');
+  Product.collectChartData('affinity', false);
 
   var ctx1 = document.getElementById('chart1').getContext('2d');
   new Chart(ctx1, {
@@ -313,6 +326,9 @@ Product.displayResults = function() {
       }
     }
   });
+  // add listener for sort selection change
+  var el = document.getElementById('sortSelection');
+  el.addEventListener('click', this.sortTypeListener);
 };
 
 // Helper: Create a text element <tag>text</tag> in <parent>
@@ -438,9 +454,9 @@ Product.sortObjArrayOnKey = function(objArray, keyName, accending) {
 };
 
 // Gather charting data sorted on keyName.
-Product.collectChartData = function(keyName) {
+Product.collectChartData = function(keyName, ascending) {
   // Sort products by keyName (typically clickCount (aka votes) or affinity (votes/views))
-  Product.prodArray = Product.sortObjArrayOnKey(Product.prodArray, keyName, false);
+  Product.prodArray = Product.sortObjArrayOnKey(Product.prodArray, keyName, ascending);
   // clear all arrays (needed between sorts otherwise we get 2x data)
   Product.chartData.allProdNames = [];
   Product.chartData.allVotes = [];
@@ -477,10 +493,10 @@ Product.constructorFactory = function(JSONstring) {
   if (JSONstring === null) return null;
   for (var o of JSONstring) {
     var p = new Product(o.name, o.src);
-    p.displayCount = o.displayCount;
-    p.clickCount = o.clickCount;
-    p.affinity = o.affinity;
-    p.ID = o.ID;
+    p.displayCount = parseInt(o.displayCount);
+    p.clickCount = parseInt(o.clickCount);
+    p.affinity = parseFloat(o.affinity);
+    p.ID = parseInt(o.ID);
     console.log('factory',o);
   }
   return Product.prodArray;
@@ -520,8 +536,10 @@ Product.init = function() {
     || [];
   Product.sessionIndex = Product.sessions.length;
   Product.thisSessionIndex = Product.sessionIndex - 1;
+
   // get userName from last session and offer that as name for current session
-  document.getElementById('userName').setAttribute('value',Product.sessions[Product.sessions.length-1].userName);
+  var el = document.getElementById('userName');
+  el.setAttribute('value',(Product.sessions[0] ? Product.sessions[Product.sessions.length-1].userName : ''));
 
   // Restore votes array
   Product.votes = JSON.parse(localStorage.getItem('votes')) || [];
