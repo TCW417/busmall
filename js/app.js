@@ -201,6 +201,23 @@ Product.resultsDisplayHeadings = function() {
   var h2El = document.createElement('h2');
   h2El.textContent = 'Voting Results';
   mainEl.appendChild(h2El);
+
+  // Add new form for selecting sort type
+  var sortSelectHtml = '<form>\
+  <fieldset id="sortSelection">\
+    <div  id="sortBy">\
+      <label for="sortBy">Sort Voting Results By:</label>\
+      <input type="radio" name="sortBy" value="productName" />Product Name\
+      <input type="radio" name="sortBy" value="displayCount" />Views\
+      <input type="radio" name="sortBy" value="clickCount" checked="checked" />Votes\
+      <input type="radio" name="sortBy" value="affinity" />Affinity\
+    </div>\
+  </fieldset>\
+  </form>';
+  var divEl = document.createElement('div');
+  divEl.setAttribute('id','sortSelection');
+  divEl.innerHTML = sortSelectHtml;
+  mainEl.appendChild(divEl);
 };
 
 // Display voting results
