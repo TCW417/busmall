@@ -371,24 +371,6 @@ Product.sortObjArrayOnKey = function(objArray, keyName, accending) {
   } while (swapped);
   return rtnArray;
 };
-// Product.sortProdArrayOn = function(keyName) {
-//   // This is a standard bubble sort
-//   var swap = function(i, j) {
-//     var temp = Product.prodArray[i];
-//     Product.prodArray[i] = Product.prodArray[j];
-//     Product.prodArray[j] = temp;
-//   };
-//   var swapped;
-//   do {
-//     swapped = false;
-//     for (var p = 0; p < Product.prodArray.length; p++) {
-//       if (Product.prodArray[p] && Product.prodArray[p+1] && Product.prodArray[p][keyName] < Product.prodArray[p+1][keyName]) {
-//         swap(p, p+1);
-//         swapped = true;
-//       }
-//     }
-//   } while (swapped);
-// };
 
 // Gather charting data sorted on keyName.
 Product.collectChartData = function(keyName) {
