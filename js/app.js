@@ -16,6 +16,18 @@ Product.chartData = {
   allAffinities: [], // votes/view percentage
   allColors: []
 };
+// Vote data object
+Product.Vote = function(product, user) {
+  this.pID = product.ID;
+  this.name = product.name;
+  this.user = user;
+  this.session = Product.sessionNum;
+  this.dateStamp = new Date(Date.now() - 24*60*60*1000).toLocaleString();
+  // var yesterday = new Date(Date.now() - 24*60*60*1000);
+  // // Convert it to a readable string
+  // var reportDate = new Date(Date.now() - 24*60*60*1000).toLocaleString();
+};
+Product.votes = []; // all votes cast
 
 // Constructor for Product object
 function Product(productName, imgFileName) {
@@ -99,6 +111,8 @@ Product.figureClicked = function(e) {
   console.log(prodID, 'clicked');
   // increment it's vote count
   Product.prodArray[prodID].clickCount++;
+  // save vote
+  Product.votes.push(new Product.Vote(Product.prodArray[prodID], Product.userName));
   // decrement global vote count and update display
   Product.voteCount--;
 
