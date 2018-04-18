@@ -348,30 +348,52 @@ Product.voteProducts = function() {
   Product.startListening();
 };
 
-// Sort all prodArray entries on keyname value
-Product.sortProdArrayOn = function(keyName) {
+// Sort Object array on keyname value in accending order of 3rd param == false
+Product.sortObjArrayOnKey = function(objArray, keyName, accending) {
   // This is a standard bubble sort
   var swap = function(i, j) {
-    var temp = Product.prodArray[i];
-    Product.prodArray[i] = Product.prodArray[j];
-    Product.prodArray[j] = temp;
+    var temp = rtnArray[i];
+    rtnArray[i] = rtnArray[j];
+    rtnArray[j] = temp;
   };
-  var swapped;
+  var test = function(a, b) {
+    return (accending ? a > b : a < b);
+  };
+  var swapped, rtnArray = objArray.slice(0); // create a clone of the obj arracy
   do {
     swapped = false;
-    for (var p = 0; p < Product.prodArray.length; p++) {
-      if (Product.prodArray[p] && Product.prodArray[p+1] && Product.prodArray[p][keyName] < Product.prodArray[p+1][keyName]) {
+    for (var p = 0; p < rtnArray.length; p++) {
+      if (rtnArray[p] && rtnArray[p+1] && test(rtnArray[p][keyName], rtnArray[p+1][keyName])) {
         swap(p, p+1);
         swapped = true;
       }
     }
   } while (swapped);
+  return rtnArray;
 };
+// Product.sortProdArrayOn = function(keyName) {
+//   // This is a standard bubble sort
+//   var swap = function(i, j) {
+//     var temp = Product.prodArray[i];
+//     Product.prodArray[i] = Product.prodArray[j];
+//     Product.prodArray[j] = temp;
+//   };
+//   var swapped;
+//   do {
+//     swapped = false;
+//     for (var p = 0; p < Product.prodArray.length; p++) {
+//       if (Product.prodArray[p] && Product.prodArray[p+1] && Product.prodArray[p][keyName] < Product.prodArray[p+1][keyName]) {
+//         swap(p, p+1);
+//         swapped = true;
+//       }
+//     }
+//   } while (swapped);
+// };
 
 // Gather charting data sorted on keyName.
 Product.collectChartData = function(keyName) {
   // Sort products by keyName (typically clickCount (aka votes) or affinity (votes/views))
-  Product.sortProdArrayOn(keyName);
+  Product.prodArray = Product.sortObjArrayOnKey(Product.prodArray, keyName, false);
   // clear all arrays (needed between sorts otherwise we get 2x data)
   Product.chartData.allProdNames = [];
   Product.chartData.allVotes = [];
@@ -387,21 +409,6 @@ Product.collectChartData = function(keyName) {
     Product.chartData.allColors.push(Product.prodArray[p].chartColor);
   }
 };
-
-// Product.genRandomColors = function() {
-//   var ca = [], c, r, g, b, i = 0;
-//   while (i < Product.prodArray.length) {
-//     r = Math.floor(Math.random() * 0xF * 0xF).toString(16);
-//     g = Math.floor(Math.random() * 0xF * 0xE).toString(16);
-//     b = Math.floor(Math.random() * 0xF * 0xF).toString(16);
-//     c = '#'+ r + g + b;
-//     if (!ca.includes(c)) {
-//       ca.push(c);
-//     }
-//     i++;
-//   }
-//   return ca;
-// };
 
 // Initialize objects and first listener
 Product.init = function() {
