@@ -50,6 +50,11 @@ input[type="radio"] {
   vertical-align: middle;
 }
 
+div#sortBy {
+  font-family: sans-serif;
+  text-align: center;
+  font-size: 25px;
+}
 button#submit {
   width: 150px;
   height: 45px;
