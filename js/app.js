@@ -401,13 +401,28 @@ Product.collectChartData = function(keyName) {
   Product.chartData.allAffinities = [];
   Product.chartData.allColors = [];
   // populate the chart data arrays
-  for (var p = 0; p < Product.prodArray.length; p++) {
-    Product.chartData.allProdNames.push(Product.prodArray[p].name);
-    Product.chartData.allVotes.push(Product.prodArray[p].clickCount);
-    Product.chartData.allViews.push(Product.prodArray[p].displayCount);
-    Product.chartData.allAffinities.push(Product.prodArray[p].affinity);
-    Product.chartData.allColors.push(Product.prodArray[p].chartColor);
+  var pObj = Product.objParamDeconstruct(Product.prodArray);
+  Product.chartData.allProdNames = pObj.name; 
+  Product.chartData.allVotes = pObj.clickCount;
+  Product.chartData.allViews = pObj.displayCount;
+  Product.chartData.allAffinities = pObj.affinity;
+  Product.chartData.allColors = pObj.chartColor;
+};
+
+// Helper: Deconstruct objArray into a collection of arrays within a single object.
+Product.objParamDeconstruct = function(objArray) {
+  var o = {}; // blank object
+  var objNames = Object.getOwnPropertyNames(objArray[0]); // array of key names
+  // initialize return object
+  for (var k of objNames) {
+    o[k] = [];
   }
+  for (k of objNames) { // for each object key name
+    for (var obj of objArray) { // for each object in the array
+      o[k].push(obj[k]); // add value of key to return object array
+    }
+  }
+  return o;
 };
 
 // Initialize objects and first listener
