@@ -537,12 +537,24 @@ Product.init = function() {
   Product.sessionIndex = Product.sessions.length;
   Product.thisSessionIndex = Product.sessionIndex - 1;
 
+  // Restore votes array
+  Product.votes = JSON.parse(localStorage.getItem('votes')) || [];
+
+  // Create anonymous user results so we can build store data
+  if (localStorage.anonymousResults) localStorage.removeItem('anonymousResults');
+  Product.restoreResults('anonymous');
+  // mock up store description and price data
+  Product.storeDetail = new Object();
+  for (var p of Product.prodArray) {
+    Product.storeDetail[p.name] = new Object();
+    Product.storeDetail[p.name].description = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi blandit, neque sit amet gravida mollis, lectus nisi ultrices lectus, id porttitor ipsum arcu et quam. Vivamus odio sapien, porta id magna sit amet, commodo aliquam augue.';
+    Product.storeDetail[p.name].price = Math.round((Math.random() * 25 + 4)) + 0.99;
+  }
+  localStorage.setItem('storeDetail',JSON.stringify(Product.storeDetail));
+
   // get userName from last session and offer that as name for current session
   var el = document.getElementById('userName');
   el.setAttribute('value',(Product.sessions[0] ? Product.sessions[Product.sessions.length-1].userName : ''));
-
-  // Restore votes array
-  Product.votes = JSON.parse(localStorage.getItem('votes')) || [];
 
   // start up listener on user input form
   Product.formEl = document.getElementById('submit');
