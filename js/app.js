@@ -385,8 +385,8 @@ Product.getUserInput = function() {
   // capture session data
   Product.sessions.push(new Product.Session());
 
-  // restore or initialize product voting data
-  Product.restoreResults(Product.userName);
+  // restore or initialize product voting data (if anon it's already been done)
+  if (Product.userName !== 'anonymous') Product.restoreResults(Product.userName);
 
   // remove input form from page
   Product.clearUserInputForm();
@@ -503,7 +503,9 @@ Product.constructorFactory = function(JSONstring) {
 };
 
 Product.restoreResults =function(user) {
-  var resultsKey = user+'Results';
+  var resultsKey = user.toLowerCase()+'Results';
+  Product.prodArray = []; // initialize array
+  Product.productID = 0; // and product ID
   Product.prodArray = Product.constructorFactory(JSON.parse(localStorage.getItem(resultsKey)))
     || [
       new Product('C3P0 Rolling Suitcase','img/bag.jpg'),
@@ -541,16 +543,21 @@ Product.init = function() {
   Product.votes = JSON.parse(localStorage.getItem('votes')) || [];
 
   // Create anonymous user results so we can build store data
-  if (localStorage.anonymousResults) localStorage.removeItem('anonymousResults');
+  localStorage.removeItem('anonymousResults');
   Product.restoreResults('anonymous');
-  // mock up store description and price data
-  Product.storeDetail = new Object();
-  for (var p of Product.prodArray) {
-    Product.storeDetail[p.name] = new Object();
-    Product.storeDetail[p.name].description = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi blandit, neque sit amet gravida mollis, lectus nisi ultrices lectus, id porttitor ipsum arcu et quam. Vivamus odio sapien, porta id magna sit amet, commodo aliquam augue.';
-    Product.storeDetail[p.name].price = Math.round((Math.random() * 25 + 4)) + 0.99;
+  localStorage.setItem('anonymousResults',JSON.stringify(Product.prodArray));
+
+  // mock up store description and price data for use by the store app.
+  // IOW: This app creates the database (so to speak) that the store app uses.
+  if (!localStorage.storeDetail) {
+    Product.storeDetail = new Object();
+    for (var p of Product.prodArray) {
+      Product.storeDetail[p.name] = new Object();
+      Product.storeDetail[p.name].description = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi blandit, neque sit amet gravida mollis, lectus nisi ultrices lectus, id porttitor ipsum arcu et quam. Vivamus odio sapien, porta id magna sit amet, commodo aliquam augue.';
+      Product.storeDetail[p.name].price = Math.round((Math.random() * 25 + 4)) + 0.99;
+    }
+    localStorage.setItem('storeDetail',JSON.stringify(Product.storeDetail));
   }
-  localStorage.setItem('storeDetail',JSON.stringify(Product.storeDetail));
 
   // get userName from last session and offer that as name for current session
   var el = document.getElementById('userName');
