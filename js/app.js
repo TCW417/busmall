@@ -43,7 +43,7 @@ Product.Session = function() {
   this.sessionStart = Date.now();
   this.sessionEnd = 0;
   this.votes = Product.voteCount; // vote countdown for this session
-  this.product = Product.restoreResults(Product.userName); // products voted on
+  this.prodArray = Product.restoreResults(Product.userName); // products voted on
   Product.thisSessionIndex = Product.sessionIndex;
   Product.sessionIndex++;
 };
@@ -88,7 +88,7 @@ Product.getRandomImageIndices = function(tableauSize) {
   var i = 0;
   var usedThisTurn = []; // put this turn's indices here
   while (i < tableauSize) { // for each "cell" in the picture tableau
-    var r = Math.floor(Math.random() * Product.prodArray.length); // get a random index
+    var r = Math.floor(Math.random() * Product.thisSession.prodArray.length); // get a random index
     // test r against last turn's products and what's been picked so for for this turn
     if (!Product.usedLastTurn.includes(r) && !usedThisTurn.includes(r)) {
       // It's unique. Add it to the this turn array
@@ -108,21 +108,21 @@ Product.displayProductImages = function(tableauSize) {
   for (var img = 0; img < displayList.length; img++) {
     // modify DOM for image to display file and name
     var imgEl = document.getElementById('i'+img);
-    imgEl.src = Product.prodArray[displayList[img]].src; // set image src attribute
+    imgEl.src = Product.thisSession.prodArray[displayList[img]].src; // set image src attribute
     var capEl = document.getElementById('c'+img);
-    capEl.textContent = Product.prodArray[displayList[img]].name; // update image caption
+    capEl.textContent = Product.thisSession.prodArray[displayList[img]].name; // update image caption
     // add pid attributes to image, caption and figure
     // Needed because user could click on any of these to vote
-    imgEl.setAttribute('pid', Product.prodArray[displayList[img]].ID);
-    capEl.setAttribute('pid', Product.prodArray[displayList[img]].ID);
+    imgEl.setAttribute('pid', Product.thisSession.prodArray[displayList[img]].ID);
+    capEl.setAttribute('pid', Product.thisSession.prodArray[displayList[img]].ID);
     var figEl = document.getElementById('f'+img);
-    figEl.setAttribute('pid', Product.prodArray[displayList[img]].ID);
+    figEl.setAttribute('pid', Product.thisSession.prodArray[displayList[img]].ID);
     // Increment product's displayed counter
-    Product.prodArray[displayList[img]].displayCount++;
+    Product.thisSession.prodArray[displayList[img]].displayCount++;
   }
   // update votes remaining tally on screen
   var vcEl = document.getElementById('votes-left');
-  vcEl.textContent = Product.voteCount;
+  vcEl.textContent = Product.thisSession.votes;
 };
 
 // Event listener for click on product image
@@ -131,18 +131,19 @@ Product.figureClicked = function(e) {
   var prodID = e.target.getAttribute('pid');
   console.log(prodID, 'clicked');
   // increment it's vote count
-  Product.prodArray[prodID].clickCount++;
+  Product.thisSession.prodArray[prodID].clickCount++;
   // save vote
-  Product.votes.push(new Product.Vote(Product.prodArray[prodID], Product.userName));
+  Product.votes.push(new Product.Vote(Product.thisSession.prodArray[prodID], Product.thisSession.userName));
   // decrement global vote count and update display
-  Product.voteCount--;
+  Product.thisSession.votes--;
+  Product.saveSessions(); // save session to local storage.
 
-  if (Product.voteCount > 0) {
+  if (Product.thisSession.votes > 0) {
   // display more images
-    Product.displayProductImages(Product.tableauSize);
+    Product.displayProductImages(Product.thisSession.tableauSize);
   } else {
     // end timed portion of the session
-    Product.sessions[Product.thisSessionIndex].sessionEnd = Date.now();
+    Product.thisSession.sessionEnd = Date.now();
     // update affinity values of each product
     Product.updateAffinityResults();
     // Give each product it's own chart color
@@ -160,6 +161,10 @@ Product.figureClicked = function(e) {
   }
 };
 
+Product.saveSessions = function() {
+  localStorage.sessions = JSON.stringify(Product.sessions);
+};
+
 // Add listener to product pics
 Product.startListening = function() {
   var figures = document.getElementById('product-pics');
@@ -175,15 +180,15 @@ Product.stopListening = function() {
 // After voting, generate affinity values for each product
 Product.updateAffinityResults = function() {
   // call votesPerView method on each product
-  for (var i of Product.prodArray) {
+  for (var i of Product.thisSession.prodArray) {
     i.votesPerView();
   }
 };
 
 // Pick a chart color for each product
 Product.pickChartColors = function() {
-  for (var i in Product.prodArray) {
-    Product.prodArray[i].genChartColor();
+  for (var i in Product.thisSession.prodArray) {
+    Product.thisSession.prodArray[i].genChartColor();
   }
 };
 
@@ -383,7 +388,6 @@ Product.getUserInput = function() {
   // stop listening for user input
   var formEl = document.getElementById('submit');
   formEl.removeEventListener('click', Product.getUserInput);
-  debugger;
   // new session or resume last incomplete session?
   Product.thisSession = Product.getThisSession(Product.userName);
 
@@ -400,17 +404,12 @@ Product.getUserInput = function() {
   Product.voteProducts();
 };
 
-// Return 
-// new session if last one was completed or
+// Return new session if last one was completed or
 // last session if it wasn't completed.
 Product.getThisSession = function(userName) {
   var lastSession = Product.findLastSession(userName);
   if (lastSession === null || lastSession.voteCount === 0) {  // create a new session
     lastSession = new Product.Session();
-  //   lastSesson.userName = userName;
-  //   lastSession.tableauSize = Product.tableauSize;
-  //   lastSession.voteCount = Product.voteCount;
-  //   lastSession.product = Product.restoreResults(userName);
   }
   return lastSession;
 };
