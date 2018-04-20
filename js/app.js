@@ -42,6 +42,8 @@ Product.Session = function() {
   this.tableauSize = Product.tableauSize;
   this.sessionStart = Date.now();
   this.sessionEnd = 0;
+  this.votes = Product.voteCount; // vote countdown for this session
+  this.product = Product.restoreResults(Product.userName); // products voted on
   Product.thisSessionIndex = Product.sessionIndex;
   Product.sessionIndex++;
 };
@@ -381,18 +383,44 @@ Product.getUserInput = function() {
   // stop listening for user input
   var formEl = document.getElementById('submit');
   formEl.removeEventListener('click', Product.getUserInput);
+  debugger;
+  // new session or resume last incomplete session?
+  Product.thisSession = Product.getThisSession(Product.userName);
 
   // capture session data
-  Product.sessions.push(new Product.Session());
+  Product.sessions.push(Product.thisSession);
 
   // restore or initialize product voting data
-  Product.restoreResults(Product.userName);
+  //Product.restoreResults(Product.userName);
 
   // remove input form from page
   Product.clearUserInputForm();
 
   // begin voting products
   Product.voteProducts();
+};
+
+// Return 
+// new session if last one was completed or
+// last session if it wasn't completed.
+Product.getThisSession = function(userName) {
+  var lastSession = Product.findLastSession(userName);
+  if (lastSession === null || lastSession.voteCount === 0) {  // create a new session
+    lastSession = new Product.Session();
+  //   lastSesson.userName = userName;
+  //   lastSession.tableauSize = Product.tableauSize;
+  //   lastSession.voteCount = Product.voteCount;
+  //   lastSession.product = Product.restoreResults(userName);
+  }
+  return lastSession;
+};
+
+// Scan sessions array for userName. 
+Product.findLastSession = function(userName) {
+  for (var s of Product.sessions) {
+    if (userName === s.userName) return s;
+  }
+  return null;
 };
 
 // Delete user input html from page prior to displaying product pics
@@ -420,11 +448,11 @@ Product.voteProducts = function() {
   // 1) add tableau heading to the page
   Product.insertTableauHeading();
   // 2) add figure elements
-  for (var f = 0; f < Product.tableauSize; f++) {
+  for (var f = 0; f < Product.thisSession.tableauSize; f++) {
     Product.createFigureElement(f);
   }
   // Display intial set of product images
-  Product.displayProductImages(Product.tableauSize);
+  Product.displayProductImages(Product.thisSession.tableauSize);
   // Start listening for votes
   Product.startListening();
 };
@@ -527,6 +555,7 @@ Product.restoreResults =function(user) {
       new Product('Recycling Watering Can','img/water-can.jpg'),
       new Product('Boquet-Retaining Wine Glass','img/wine-glass.jpg')
     ];
+  return Product.prodArray;
 };
 
 // Initialize objects and first listener
@@ -534,12 +563,12 @@ Product.init = function() {
   // Restore session data
   Product.sessions = JSON.parse(localStorage.getItem('sessions'))
     || [];
-  Product.sessionIndex = Product.sessions.length;
-  Product.thisSessionIndex = Product.sessionIndex - 1;
+  Product.sessionIndex = Product.sessions.length; // index of next session
+  Product.thisSessionIndex = Product.sessionIndex - 1; // index of last session
 
   // get userName from last session and offer that as name for current session
   var el = document.getElementById('userName');
-  el.setAttribute('value',(Product.sessions[0] ? Product.sessions[Product.sessions.length-1].userName : ''));
+  el.setAttribute('value',(Product.sessions[0] ? Product.sessions[Product.thisSessionIndex].userName : ''));
 
   // Restore votes array
   Product.votes = JSON.parse(localStorage.getItem('votes')) || [];
