@@ -63,24 +63,25 @@ function Product(productName, imgFileName) {
 }
 
 // Method: Calculate affinity (votes/views) for this object
-Product.prototype.votesPerView = function() {
-  var rv = 0;
-  if (this.displayCount !== 0) { // Protect against zero displays (shouldn't happen but...)
-    rv = (this.clickCount / this.displayCount) * 100;
-  }
-  this.affinity = Number.parseFloat(rv);
-};
+// Product.prototype.votesPerView = function() {
+//   var rv = 0;
+//   if (this.displayCount !== 0) { // Protect against zero displays (shouldn't happen but...)
+//     rv = (this.clickCount / this.displayCount) * 100;
+//   }
+//   this.affinity = Number.parseFloat(rv);
+// };
 
 // Method: Generate chart color for this based on its ID number
-Product.prototype.genChartColor = function() {
+Product.genChartColor = function(thisObj) {
   var rgb = function(r, g, b) {
     return '#' + r.toString(16) + g.toString(16) + b.toString(16);
   };
-  var factor = (255 - 100) / Product.prodArray.length;
+  // debugger;
+  var factor = (255 - 100) / Product.thisSession.prodArray.length;
   var r = 120;
-  var g = Math.floor(100 + (this.ID * factor));
-  var b = Math.floor(250 - (this.ID * factor));
-  this.chartColor = rgb(r, g, b);
+  var g = Math.floor(100 + (parseInt(thisObj.ID) * factor));
+  var b = Math.floor(250 - (parseInt(thisObj.ID) * factor));
+  thisObj.chartColor = rgb(r, g, b);
 };
 
 // Return set of array indices that are unique between turns
@@ -181,14 +182,15 @@ Product.stopListening = function() {
 Product.updateAffinityResults = function() {
   // call votesPerView method on each product
   for (var i of Product.thisSession.prodArray) {
-    i.votesPerView();
+    // i.votesPerView();
+    i.affinity = Number.parseFloat(i.clickCount / i.displayCount) * 100;
   }
 };
 
 // Pick a chart color for each product
 Product.pickChartColors = function() {
   for (var i in Product.thisSession.prodArray) {
-    Product.thisSession.prodArray[i].genChartColor();
+    Product.genChartColor(Product.thisSession.prodArray[i]);
   }
 };
 
@@ -380,6 +382,7 @@ Product.createFigureElement = function(figNum) {
 // Listener on user input form submit button
 Product.getUserInput = function() {
   // get name, session and tableauSize
+  // debugger;
   Product.userName = document.getElementById('userName').value;
   if (Product.userName === '') Product.userName = 'anonymous';
   Product.sessionNum = parseInt(document.getElementById('session').value);
@@ -408,7 +411,7 @@ Product.getUserInput = function() {
 // last session if it wasn't completed.
 Product.getThisSession = function(userName) {
   var lastSession = Product.findLastSession(userName);
-  if (lastSession === null || lastSession.voteCount === 0) {  // create a new session
+  if (lastSession === null || lastSession.votes === 0) {  // create a new session
     lastSession = new Product.Session();
   }
   return lastSession;
@@ -416,8 +419,11 @@ Product.getThisSession = function(userName) {
 
 // Scan sessions array for userName. 
 Product.findLastSession = function(userName) {
-  for (var s of Product.sessions) {
-    if (userName === s.userName) return s;
+  for (var s = Product.sessions.length-1; s >= 0; s--) {
+    if (userName === Product.sessions[s].userName) {
+      Product.sessions[s].votes = parseInt(Product.sessions[s].votes);
+      return Product.sessions[s];
+    }
   }
   return null;
 };
@@ -491,7 +497,7 @@ Product.collectChartData = function(keyName, ascending) {
   Product.chartData.allAffinities = [];
   Product.chartData.allColors = [];
   // populate the chart data arrays
-  var pObj = Product.objParamDeconstruct(Product.prodArray);
+  var pObj = Product.objParamDeconstruct(Product.thisSession.prodArray);
   Product.chartData.allProdNames = pObj.name;
   Product.chartData.allVotes = pObj.clickCount;
   Product.chartData.allViews = pObj.displayCount;
@@ -517,6 +523,7 @@ Product.objParamDeconstruct = function(objArray) {
 
 // reconstitute Products.prodArray from localStorage
 Product.constructorFactory = function(JSONstring) {
+  // debugger;
   if (JSONstring === null) return null;
   for (var o of JSONstring) {
     var p = new Product(o.name, o.src);
@@ -530,6 +537,7 @@ Product.constructorFactory = function(JSONstring) {
 };
 
 Product.restoreResults =function(user) {
+  // debugger;
   var resultsKey = user+'Results';
   Product.prodArray = Product.constructorFactory(JSON.parse(localStorage.getItem(resultsKey)))
     || [
