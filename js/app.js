@@ -434,6 +434,9 @@ Product.getThisSession = function(userName) {
   var lastSession = Product.findLastSession(userName);
   if (lastSession === null || lastSession.votes === 0) { // create a new session
     lastSession = new Product.Session();
+  } else {
+    lastSession = Product.restoreSessionObj(lastSession);
+    Product.prodArray = lastSession.prodArray;
   }
   return lastSession;
 };
@@ -567,35 +570,30 @@ Product.sessionsFactory = function(JSONstring) {
 
   var sArray = [];
   for (var o of JSONstring) {
-    // var pArray = [];
-    // var s = new Product.Session();
-    o.sessonNum = parseInt(o.sessionNum);
-    // s.userName = o.userName;
-    o.tableauSize = parseInt(o.tableauSize);
-    o.sessionStart = parseInt(o.sessionStart);
-    o.sessionEnd = parseInt(o.sessionEnd);
-    o.votes = parseInt(o.votes);
-    // s.prodArray = []; // clear prodArray created by constructor
-    for (var i in o.prodArray) {
-      o.prodArray[i] = Product.restoreProdObj(o.prodArray[i]);
-    }
+    o = Product.restoreSessionObj(o);
     // pArray = Product.productFactory(o.prodArray); // replace with prodArray from prior session
     // s.prodArray = pArray
     sArray.push(o);
   }
   return sArray;
 };
-// Product.Session = function() {
-//   this.sessionNum = Product.sessionNum;
-//   this.userName = Product.userName;
-//   this.tableauSize = Product.tableauSize;
-//   this.sessionStart = Date.now();
-//   this.sessionEnd = 0;
-//   this.votes = Product.voteCount; // vote countdown for this session
-//   this.prodArray = Product.restoreResults(Product.userName); // products voted on
-//   Product.thisSessionIndex = Product.sessionIndex;
-//   Product.sessionIndex++;
-// };
+
+Product.restoreSessionObj = function(o) {
+  // var pArray = [];
+  // var s = new Product.Session();
+  o.sessonNum = parseInt(o.sessionNum);
+  // s.userName = o.userName;
+  o.tableauSize = parseInt(o.tableauSize);
+  o.sessionStart = parseInt(o.sessionStart);
+  o.sessionEnd = parseInt(o.sessionEnd);
+  o.votes = parseInt(o.votes);
+  // s.prodArray = []; // clear prodArray created by constructor
+  for (var i in o.prodArray) {
+    o.prodArray[i] = Product.restoreProdObj(o.prodArray[i]);
+  }
+  return o;
+};
+
 Product.restoreProdObj = function(o) {
   // var p = new Product(o.name, o.src);
   // p.displayCount = parseInt(o.displayCount);
