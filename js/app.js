@@ -133,8 +133,8 @@ Product.figureClicked = function(e) {
   console.log(prodID, 'clicked');
   // increment it's vote count
   // debugger;
-  // Product.thisSession.prodArray[prodID].clickCount = parseInt(Product.thisSession.prodArray[prodID].clickCount) + 1;
-  Product.prodArray[prodID].clickCount++;
+  Product.thisSession.prodArray[prodID].clickCount++; // = parseInt(Product.thisSession.prodArray[prodID].clickCount) + 1;
+  // Product.prodArray[prodID].clickCount++;
   // save vote to votes array
   Product.votes.push(new Product.Vote(Product.thisSession.prodArray[prodID], Product.thisSession.userName));
   // decrement global vote count and update display
@@ -568,20 +568,20 @@ Product.sessionsFactory = function(JSONstring) {
   var sArray = [];
   for (var o of JSONstring) {
     // var pArray = [];
-    var s = new Product.Session();
-    s.sessonNum = o.sessionNum;
-    s.userName = o.userName;
-    s.tableauSize = o.tableauSize;
-    s.sessionStart = o.sessionStart;
-    s.sessionEnd = 0;
-    s.votes = o.votes;
+    // var s = new Product.Session();
+    o.sessonNum = parseInt(o.sessionNum);
+    // s.userName = o.userName;
+    o.tableauSize = parseInt(o.tableauSize);
+    o.sessionStart = parseInt(o.sessionStart);
+    o.sessionEnd = parseInt(o.sessionEnd);
+    o.votes = parseInt(o.votes);
     // s.prodArray = []; // clear prodArray created by constructor
     for (var i in o.prodArray) {
-      s.prodArray[i] = Product.restoreProdObj(o.prodArray[i]);
+      o.prodArray[i] = Product.restoreProdObj(o.prodArray[i]);
     }
     // pArray = Product.productFactory(o.prodArray); // replace with prodArray from prior session
     // s.prodArray = pArray
-    sArray.push(s);
+    sArray.push(o);
   }
   return sArray;
 };
@@ -644,6 +644,8 @@ Product.initSessionData = function() {
   var sessions = JSON.parse(localStorage.getItem('sessions'));
   if (sessions) {
     Product.sessions = Product.sessionsFactory(sessions);
+    Product.sessionIndex = Product.sessions.length;
+    Product.thisSessionIndex = Product.sessionIndex - 1;
   } //else {
   //   new Product.Session(); //create new session (pushes onto Product.sessions array)
   // }
@@ -663,6 +665,7 @@ Product.init = function() {
   Product.usedLastTurn = [999,999,999]; // ID's of last turn's pics
   Product.tableauSize; // number of product pics to display
   Product.sessionNum = 0; // session number of this user's voting
+  Product.sessions;
   Product.userName = ''; // this user's name
   // Globals for chart display
   Product.chartData = {
