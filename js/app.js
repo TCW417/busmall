@@ -1,21 +1,7 @@
 'use strict';
 
-// // Globals
-// Product.productID = 0; // Give each product an internal ID
-// Product.prodArray = []; // Array of product objects
-// Product.voteCount = 25; // When === 0 show results
-// Product.usedLastTurn = [999,999,999]; // ID's of last turn's pics
-// Product.tableauSize; // number of product pics to display
-// Product.sessionNum = 0; // session number of this user's voting
-// Product.userName = ''; // this user's name
-// // Globals for chart display
-// Product.chartData = {
-//   allProdNames: [],
-//   allVotes: [],
-//   allViews: [],
-//   allAffinities: [], // votes/view percentage
-//   allColors: []
-// };
+// Globals
+// Initialized in Prod.init() at end of file.
 
 // Vote data object
 Product.Vote = function(product, user) {
@@ -61,15 +47,6 @@ function Product(productName, imgFileName) {
   this.ID = Product.productID++;
   // Product.prodArray.push(this); // Add newly created object to product array
 }
-
-// Method: Calculate affinity (votes/views) for this object
-// Product.prototype.votesPerView = function() {
-//   var rv = 0;
-//   if (this.displayCount !== 0) { // Protect against zero displays (shouldn't happen but...)
-//     rv = (this.clickCount / this.displayCount) * 100;
-//   }
-//   this.affinity = Number.parseFloat(rv);
-// };
 
 // Method: Generate chart color for this based on its ID number
 Product.genChartColor = function(thisObj) {
@@ -133,8 +110,7 @@ Product.figureClicked = function(e) {
   console.log(prodID, 'clicked');
   // increment it's vote count
   // debugger;
-  Product.thisSession.prodArray[prodID].clickCount++; // = parseInt(Product.thisSession.prodArray[prodID].clickCount) + 1;
-  // Product.prodArray[prodID].clickCount++;
+  Product.thisSession.prodArray[prodID].clickCount++; 
   // save vote to votes array
   Product.votes.push(new Product.Vote(Product.thisSession.prodArray[prodID], Product.thisSession.userName));
   // decrement global vote count and update display
@@ -408,6 +384,8 @@ Product.getUserInput = function() {
 
   // new session or resume last incomplete session?
   Product.thisSession = Product.getThisSession(Product.userName);
+  Product.thisSession.tableauSize = Product.tableauSize;
+  Product.thisSession.sessionNum = Product.sessionNum;
   console.log('thisSession',Product.thisSession);
   Product.sessions.push(Product.thisSession);
 
@@ -547,9 +525,6 @@ Product.objParamDeconstruct = function(objArray) {
 
 // reconstitute Products.prodArray from localStorage
 Product.productFactory = function(JSONstring) {
-  // debugger;
-  // Product.prodArray = [];
-  // if (JSONstring !== null) {
   if (JSONstring === null) return null;
   var oArray = [];
   for (var o of JSONstring) {
@@ -571,23 +546,17 @@ Product.sessionsFactory = function(JSONstring) {
   var sArray = [];
   for (var o of JSONstring) {
     o = Product.restoreSessionObj(o);
-    // pArray = Product.productFactory(o.prodArray); // replace with prodArray from prior session
-    // s.prodArray = pArray
     sArray.push(o);
   }
   return sArray;
 };
 
 Product.restoreSessionObj = function(o) {
-  // var pArray = [];
-  // var s = new Product.Session();
   o.sessonNum = parseInt(o.sessionNum);
-  // s.userName = o.userName;
   o.tableauSize = parseInt(o.tableauSize);
   o.sessionStart = parseInt(o.sessionStart);
   o.sessionEnd = parseInt(o.sessionEnd);
   o.votes = parseInt(o.votes);
-  // s.prodArray = []; // clear prodArray created by constructor
   for (var i in o.prodArray) {
     o.prodArray[i] = Product.restoreProdObj(o.prodArray[i]);
   }
@@ -595,12 +564,6 @@ Product.restoreSessionObj = function(o) {
 };
 
 Product.restoreProdObj = function(o) {
-  // var p = new Product(o.name, o.src);
-  // p.displayCount = parseInt(o.displayCount);
-  // p.clickCount = parseInt(o.clickCount);
-  // p.affinity = parseFloat(o.affinity);
-  // p.ID = parseInt(o.ID);
-  // return p;
   o.displayCount = parseInt(o.displayCount);
   o.clickCount = parseInt(o.clickCount);
   o.affinity = parseFloat(o.affinity);
@@ -609,7 +572,6 @@ Product.restoreProdObj = function(o) {
 };
 
 Product.restoreResults =function(user) {
-  // debugger;
   var resultsKey = user.toLowerCase()+'Results';
   Product.prodArray = Product.productFactory(JSON.parse(localStorage.getItem(resultsKey)))
     || [
@@ -644,14 +606,7 @@ Product.initSessionData = function() {
     Product.sessions = Product.sessionsFactory(sessions);
     Product.sessionIndex = Product.sessions.length;
     Product.thisSessionIndex = Product.sessionIndex - 1;
-  } //else {
-  //   new Product.Session(); //create new session (pushes onto Product.sessions array)
-  // }
-  // Product.sessions = Product.sessionsFactory(JSON.parse(localStorage.getItem('sessions')))
-  // || [];
-  // Product.sessionIndex = Product.sessions.length; // index of next session
-  // Product.thisSessionIndex = Product.sessionIndex - 1; // index of last session
-
+  }
 };
 
 // Initialize objects and first listener
