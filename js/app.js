@@ -1,21 +1,7 @@
 'use strict';
 
 // Globals
-Product.productID = 0; // Give each product an internal ID
-Product.prodArray = []; // Array of product objects
-Product.voteCount = 25; // When === 0 show results
-Product.usedLastTurn = [999,999,999]; // ID's of last turn's pics
-Product.tableauSize; // number of product pics to display
-Product.sessionNum = 0; // session number of this user's voting
-Product.userName = ''; // this user's name
-// Globals for chart display
-Product.chartData = {
-  allProdNames: [],
-  allVotes: [],
-  allViews: [],
-  allAffinities: [], // votes/view percentage
-  allColors: []
-};
+// Initialized in Prod.init() at end of file.
 
 // Vote data object
 Product.Vote = function(product, user) {
@@ -36,17 +22,19 @@ Product.dateNumToString = function(dateNum) {
 // Session data object
 Product.sessionIndex = 0; // index into sessions array. will be zero after first session created
 Product.thisSessionIndex = 0;
+Product.sessions = []; // empty array of session objects
 Product.Session = function() {
   this.sessionNum = Product.sessionNum;
   this.userName = Product.userName;
   this.tableauSize = Product.tableauSize;
   this.sessionStart = Date.now();
   this.sessionEnd = 0;
+  this.votes = Product.voteCount; // vote countdown for this session
+  this.prodArray = Product.restoreResults(Product.userName); // products voted on
   Product.thisSessionIndex = Product.sessionIndex;
   Product.sessionIndex++;
+  // Product.sessions.push(this);
 };
-
-Product.sessions = []; // empty array of session objects
 
 // Constructor for Product object
 function Product(productName, imgFileName) {
@@ -57,28 +45,20 @@ function Product(productName, imgFileName) {
   this.affinity = 0;
   this.chartColor = 0;
   this.ID = Product.productID++;
-  Product.prodArray.push(this); // Add newly created object to product array
+  // Product.prodArray.push(this); // Add newly created object to product array
 }
 
-// Method: Calculate affinity (votes/views) for this object
-Product.prototype.votesPerView = function() {
-  var rv = 0;
-  if (this.displayCount !== 0) { // Protect against zero displays (shouldn't happen but...)
-    rv = (this.clickCount / this.displayCount) * 100;
-  }
-  this.affinity = Number.parseFloat(rv);
-};
-
 // Method: Generate chart color for this based on its ID number
-Product.prototype.genChartColor = function() {
+Product.genChartColor = function(thisObj) {
   var rgb = function(r, g, b) {
     return '#' + r.toString(16) + g.toString(16) + b.toString(16);
   };
-  var factor = (255 - 100) / Product.prodArray.length;
+  // debugger;
+  var factor = (255 - 100) / Product.thisSession.prodArray.length;
   var r = 120;
-  var g = Math.floor(100 + (this.ID * factor));
-  var b = Math.floor(250 - (this.ID * factor));
-  this.chartColor = rgb(r, g, b);
+  var g = Math.floor(100 + (parseInt(thisObj.ID) * factor));
+  var b = Math.floor(250 - (parseInt(thisObj.ID) * factor));
+  thisObj.chartColor = rgb(r, g, b);
 };
 
 // Return set of array indices that are unique between turns
@@ -86,7 +66,7 @@ Product.getRandomImageIndices = function(tableauSize) {
   var i = 0;
   var usedThisTurn = []; // put this turn's indices here
   while (i < tableauSize) { // for each "cell" in the picture tableau
-    var r = Math.floor(Math.random() * Product.prodArray.length); // get a random index
+    var r = Math.floor(Math.random() * Product.thisSession.prodArray.length); // get a random index
     // test r against last turn's products and what's been picked so for for this turn
     if (!Product.usedLastTurn.includes(r) && !usedThisTurn.includes(r)) {
       // It's unique. Add it to the this turn array
@@ -106,21 +86,21 @@ Product.displayProductImages = function(tableauSize) {
   for (var img = 0; img < displayList.length; img++) {
     // modify DOM for image to display file and name
     var imgEl = document.getElementById('i'+img);
-    imgEl.src = Product.prodArray[displayList[img]].src; // set image src attribute
+    imgEl.src = Product.thisSession.prodArray[displayList[img]].src; // set image src attribute
     var capEl = document.getElementById('c'+img);
-    capEl.textContent = Product.prodArray[displayList[img]].name; // update image caption
+    capEl.textContent = Product.thisSession.prodArray[displayList[img]].name; // update image caption
     // add pid attributes to image, caption and figure
     // Needed because user could click on any of these to vote
-    imgEl.setAttribute('pid', Product.prodArray[displayList[img]].ID);
-    capEl.setAttribute('pid', Product.prodArray[displayList[img]].ID);
+    imgEl.setAttribute('pid', Product.thisSession.prodArray[displayList[img]].ID);
+    capEl.setAttribute('pid', Product.thisSession.prodArray[displayList[img]].ID);
     var figEl = document.getElementById('f'+img);
-    figEl.setAttribute('pid', Product.prodArray[displayList[img]].ID);
+    figEl.setAttribute('pid', Product.thisSession.prodArray[displayList[img]].ID);
     // Increment product's displayed counter
-    Product.prodArray[displayList[img]].displayCount++;
+    Product.thisSession.prodArray[displayList[img]].displayCount++;
   }
   // update votes remaining tally on screen
   var vcEl = document.getElementById('votes-left');
-  vcEl.textContent = Product.voteCount;
+  vcEl.textContent = Product.thisSession.votes;
 };
 
 // Event listener for click on product image
@@ -129,33 +109,50 @@ Product.figureClicked = function(e) {
   var prodID = e.target.getAttribute('pid');
   console.log(prodID, 'clicked');
   // increment it's vote count
-  Product.prodArray[prodID].clickCount++;
-  // save vote
-  Product.votes.push(new Product.Vote(Product.prodArray[prodID], Product.userName));
+  // debugger;
+  Product.thisSession.prodArray[prodID].clickCount++; 
+  // save vote to votes array
+  Product.votes.push(new Product.Vote(Product.thisSession.prodArray[prodID], Product.thisSession.userName));
   // decrement global vote count and update display
-  Product.voteCount--;
+  Product.thisSession.votes--;
+  Product.saveSessions(); // save data to local storage.
+  Product.saveProdArray();
+  Product.saveVotes();
 
-  if (Product.voteCount > 0) {
+  if (Product.thisSession.votes > 0) {
   // display more images
-    Product.displayProductImages(Product.tableauSize);
+    Product.displayProductImages(Product.thisSession.tableauSize);
   } else {
     // end timed portion of the session
-    Product.sessions[Product.thisSessionIndex].sessionEnd = Date.now();
+    Product.thisSession.sessionEnd = Date.now();
     // update affinity values of each product
     Product.updateAffinityResults();
     // Give each product it's own chart color
     Product.pickChartColors();
     // Save results under [userName+results] key
-    localStorage[Product.sessions[Product.thisSessionIndex].userName.toLowerCase()+'Results'] = JSON.stringify(Product.prodArray);
+    // localStorage[Product.sessions[Product.thisSessionIndex].userName.toLowerCase()+'Results'] = JSON.stringify(Product.thisSession.prodArray);
+    Product.saveProdArray();
     // Save sessions to local storage
-    localStorage.sessions = JSON.stringify(Product.sessions);
+    Product.saveSessions();
+    // localStorage.sessions = JSON.stringify(Product.sessions);
     // Save votes to local storage, appending to existing votes
-    localStorage.votes = JSON.stringify(Product.votes);
+    // localStorage.votes = JSON.stringify(Product.votes);
+    Product.saveVotes();
 
     Product.stopListening();
     Product.prepHtmlForResults(); // put results heading on the page (once)
     Product.displayResults('clickCount', false); // display votes initially decending sorted on clickCount (votes)
   }
+};
+
+Product.saveSessions = function() {
+  localStorage.sessions = JSON.stringify(Product.sessions);
+};
+Product.saveProdArray = function() {
+  localStorage[Product.userName.toLowerCase()+'Results'] = JSON.stringify(Product.prodArray);
+};
+Product.saveVotes = function() {
+  localStorage.votes = JSON.stringify(Product.votes);
 };
 
 // Add listener to product pics
@@ -173,15 +170,16 @@ Product.stopListening = function() {
 // After voting, generate affinity values for each product
 Product.updateAffinityResults = function() {
   // call votesPerView method on each product
-  for (var i of Product.prodArray) {
-    i.votesPerView();
+  for (var i of Product.thisSession.prodArray) {
+    // i.votesPerView();
+    i.affinity = Number.parseFloat(parseInt(i.clickCount) / parseInt(i.displayCount)) * 100;
   }
 };
 
 // Pick a chart color for each product
 Product.pickChartColors = function() {
-  for (var i in Product.prodArray) {
-    Product.prodArray[i].genChartColor();
+  for (var i in Product.thisSession.prodArray) {
+    Product.genChartColor(Product.thisSession.prodArray[i]);
   }
 };
 
@@ -373,26 +371,63 @@ Product.createFigureElement = function(figNum) {
 // Listener on user input form submit button
 Product.getUserInput = function() {
   // get name, session and tableauSize
+  console.group('getUserInput');
   Product.userName = document.getElementById('userName').value;
   if (Product.userName === '') Product.userName = 'anonymous';
   Product.sessionNum = parseInt(document.getElementById('session').value);
   Product.tableauSize = parseInt(document.querySelector('input[name="tableauSize"]:checked').value);
+  console.log('userName',Product.userName,'sessonNum',Product.sessionNum,'tableauSize',Product.tableauSize);
 
   // stop listening for user input
   var formEl = document.getElementById('submit');
   formEl.removeEventListener('click', Product.getUserInput);
 
-  // capture session data
-  Product.sessions.push(new Product.Session());
+  // new session or resume last incomplete session?
+  Product.thisSession = Product.getThisSession(Product.userName);
+  Product.thisSession.tableauSize = Product.tableauSize;
+  Product.thisSession.sessionNum = Product.sessionNum;
+  console.log('thisSession',Product.thisSession);
+  Product.sessions.push(Product.thisSession);
 
-  // restore or initialize product voting data
-  Product.restoreResults(Product.userName);
+  // capture session data
+  // Product.sessions.push(Product.thisSession);
+  Product.saveSessions();
+
+  // restore or initialize user's accumulated product voting data
+  //Product.prodArray = Product.restoreResults(Product.userName);
+  Product.saveProdArray();
+  // localStorage.setItem(Product.userName.toLowerCase()+'Results', Product.prodArray); // save data
 
   // remove input form from page
   Product.clearUserInputForm();
+  console.groupEnd();
 
   // begin voting products
   Product.voteProducts();
+};
+
+// Return new session if last one was completed or
+// last session if it wasn't completed.
+Product.getThisSession = function(userName) {
+  var lastSession = Product.findLastSession(userName);
+  if (lastSession === null || lastSession.votes === 0) { // create a new session
+    lastSession = new Product.Session();
+  } else {
+    lastSession = Product.restoreSessionObj(lastSession);
+    Product.prodArray = lastSession.prodArray;
+  }
+  return lastSession;
+};
+
+// Scan sessions array for userName.
+Product.findLastSession = function(userName) {
+  for (var s = Product.sessions.length-1; s >= 0; s--) {
+    if (userName.toLowerCase() === Product.sessions[s].userName.toLowerCase()) {
+      Product.sessions[s].votes = parseInt(Product.sessions[s].votes);
+      return Product.sessions[s];
+    }
+  }
+  return null;
 };
 
 // Delete user input html from page prior to displaying product pics
@@ -420,11 +455,11 @@ Product.voteProducts = function() {
   // 1) add tableau heading to the page
   Product.insertTableauHeading();
   // 2) add figure elements
-  for (var f = 0; f < Product.tableauSize; f++) {
+  for (var f = 0; f < Product.thisSession.tableauSize; f++) {
     Product.createFigureElement(f);
   }
   // Display intial set of product images
-  Product.displayProductImages(Product.tableauSize);
+  Product.displayProductImages(Product.thisSession.tableauSize);
   // Start listening for votes
   Product.startListening();
 };
@@ -456,7 +491,7 @@ Product.sortObjArrayOnKey = function(objArray, keyName, accending) {
 // Gather charting data sorted on keyName.
 Product.collectChartData = function(keyName, ascending) {
   // Sort products by keyName (typically clickCount (aka votes) or affinity (votes/views))
-  Product.prodArray = Product.sortObjArrayOnKey(Product.prodArray, keyName, ascending);
+  Product.thisSession.prodArray = Product.sortObjArrayOnKey(Product.thisSession.prodArray, keyName, ascending);
   // clear all arrays (needed between sorts otherwise we get 2x data)
   Product.chartData.allProdNames = [];
   Product.chartData.allVotes = [];
@@ -464,7 +499,7 @@ Product.collectChartData = function(keyName, ascending) {
   Product.chartData.allAffinities = [];
   Product.chartData.allColors = [];
   // populate the chart data arrays
-  var pObj = Product.objParamDeconstruct(Product.prodArray);
+  var pObj = Product.objParamDeconstruct(Product.thisSession.prodArray);
   Product.chartData.allProdNames = pObj.name;
   Product.chartData.allVotes = pObj.clickCount;
   Product.chartData.allViews = pObj.displayCount;
@@ -489,22 +524,56 @@ Product.objParamDeconstruct = function(objArray) {
 };
 
 // reconstitute Products.prodArray from localStorage
-Product.constructorFactory = function(JSONstring) {
+Product.productFactory = function(JSONstring) {
   if (JSONstring === null) return null;
+  var oArray = [];
   for (var o of JSONstring) {
-    var p = new Product(o.name, o.src);
-    p.displayCount = parseInt(o.displayCount);
-    p.clickCount = parseInt(o.clickCount);
-    p.affinity = parseFloat(o.affinity);
-    p.ID = parseInt(o.ID);
-    console.log('factory',o);
+    // var p = new Product(o.name, o.src);
+    o.displayCount = parseInt(o.displayCount);
+    o.clickCount = parseInt(o.clickCount);
+    o.affinity = parseFloat(o.affinity);
+    o.ID = parseInt(o.ID);
+    oArray.push(o);
   }
-  return Product.prodArray;
+  // }
+  return oArray;
+};
+
+// reconstitute Products.sessions array
+Product.sessionsFactory = function(JSONstring) {
+  if (JSONstring === null) return null;
+
+  var sArray = [];
+  for (var o of JSONstring) {
+    o = Product.restoreSessionObj(o);
+    sArray.push(o);
+  }
+  return sArray;
+};
+
+Product.restoreSessionObj = function(o) {
+  o.sessonNum = parseInt(o.sessionNum);
+  o.tableauSize = parseInt(o.tableauSize);
+  o.sessionStart = parseInt(o.sessionStart);
+  o.sessionEnd = parseInt(o.sessionEnd);
+  o.votes = parseInt(o.votes);
+  for (var i in o.prodArray) {
+    o.prodArray[i] = Product.restoreProdObj(o.prodArray[i]);
+  }
+  return o;
+};
+
+Product.restoreProdObj = function(o) {
+  o.displayCount = parseInt(o.displayCount);
+  o.clickCount = parseInt(o.clickCount);
+  o.affinity = parseFloat(o.affinity);
+  o.ID = parseInt(o.ID);
+  return o;
 };
 
 Product.restoreResults =function(user) {
-  var resultsKey = user+'Results';
-  Product.prodArray = Product.constructorFactory(JSON.parse(localStorage.getItem(resultsKey)))
+  var resultsKey = user.toLowerCase()+'Results';
+  Product.prodArray = Product.productFactory(JSON.parse(localStorage.getItem(resultsKey)))
     || [
       new Product('C3P0 Rolling Suitcase','img/bag.jpg'),
       new Product('Banana Slicer','img/banana.jpg'),
@@ -527,19 +596,45 @@ Product.restoreResults =function(user) {
       new Product('Recycling Watering Can','img/water-can.jpg'),
       new Product('Boquet-Retaining Wine Glass','img/wine-glass.jpg')
     ];
+  return Product.prodArray;
+};
+
+Product.initSessionData = function() {
+
+  var sessions = JSON.parse(localStorage.getItem('sessions'));
+  if (sessions) {
+    Product.sessions = Product.sessionsFactory(sessions);
+    Product.sessionIndex = Product.sessions.length;
+    Product.thisSessionIndex = Product.sessionIndex - 1;
+  }
 };
 
 // Initialize objects and first listener
 Product.init = function() {
+  // Globals
+  Product.productID = 0; // Give each product an internal ID
+  Product.prodArray = []; // Array of product objects
+  Product.voteCount = 25; // When === 0 show results
+  Product.usedLastTurn = [999,999,999]; // ID's of last turn's pics
+  Product.tableauSize; // number of product pics to display
+  Product.sessionNum = 0; // session number of this user's voting
+  Product.sessions;
+  Product.userName = ''; // this user's name
+  // Globals for chart display
+  Product.chartData = {
+    allProdNames: [],
+    allVotes: [],
+    allViews: [],
+    allAffinities: [], // votes/view percentage
+    allColors: []
+  };
+
   // Restore session data
-  Product.sessions = JSON.parse(localStorage.getItem('sessions'))
-    || [];
-  Product.sessionIndex = Product.sessions.length;
-  Product.thisSessionIndex = Product.sessionIndex - 1;
+  Product.initSessionData();
 
   // get userName from last session and offer that as name for current session
   var el = document.getElementById('userName');
-  el.setAttribute('value',(Product.sessions[0] ? Product.sessions[Product.sessions.length-1].userName : ''));
+  el.setAttribute('value',(Product.sessions[0] ? Product.sessions[Product.thisSessionIndex].userName : ''));
 
   // Restore votes array
   Product.votes = JSON.parse(localStorage.getItem('votes')) || [];
